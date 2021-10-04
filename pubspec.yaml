@@ -1,7 +1,7 @@
-name: byfix
-description: A new Flutter project.
+name: ByFix
+description: BYFIX
 
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   flutter_circle_color_picker: ^0.3.0
+  flutter_bluetooth_serial: ^0.4.0
 
 dev_dependencies:
   flutter_test:

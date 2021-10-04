@@ -1,4 +1,5 @@
-import 'package:byfix/views/rgb.dart';
+import 'package:ByFix/views/home.dart';
+import 'package:ByFix/views/rgb.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -21,8 +22,8 @@ class _MyAppState extends State<MyApp> {
         primaryColor: Color(0xFF000000),
       ),
       routes: {
-        '/': (context) => RGB(),
-        'rgb': (context) => RGB(),
+        '/': (context) => Home(),
+        '/rgb': (context) => RGB(),
       },
     );
   }
