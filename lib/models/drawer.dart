@@ -7,7 +7,6 @@ class MyDrawer extends StatelessWidget {
       onTap: () {},
       leading: const Icon(Icons.home),
       title: const Text('Anasayfa'),
-      selected: true,
     ),
     ExpansionTile(
       iconColor: Colors.white,

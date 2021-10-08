@@ -20,9 +20,19 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       initialRoute: '/',
       theme: ThemeData(
+        brightness: Brightness.light,
         primaryColor: kPriColor,
         secondaryHeaderColor: kSecColor,
+        canvasColor: const Color(0xffFFBDBDBD),
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: kPriColor,
+        secondaryHeaderColor: kSecColor,
+        canvasColor: Color(0xffFF474747),
+      ),
+      themeMode: ThemeMode.light,
+      debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => const Home(),
         '/rgb': (context) => const RGB(),

@@ -1,6 +1,8 @@
 import 'package:byfix/models/app_bar.dart';
 import 'package:byfix/models/consts.dart';
 import 'package:byfix/models/drawer.dart';
+import 'package:byfix/models/page_button.dart';
+import 'package:byfix/views/pages/shop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
@@ -18,13 +20,21 @@ class _HomeState extends State<Home> {
     _advancedDrawerController.showDrawer();
   }
 
-  late ScrollController _scrollController;
+  final ScrollController _scrollController = ScrollController();
   bool _hideAppBar = true;
   bool isScrollingDown = false;
 
+  late PageController _pageController;
+  int _page = 0;
+
+  void onPageChanged(int page) {
+    setState(() {
+      _page = page;
+    });
+  }
+
   @override
   void initState() {
-    _scrollController = new ScrollController();
     _scrollController.addListener(() {
       if (_scrollController.position.userScrollDirection ==
           ScrollDirection.reverse) {
@@ -43,12 +53,15 @@ class _HomeState extends State<Home> {
         }
       }
     });
+
+    _pageController = PageController(initialPage: _page);
     super.initState();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -89,24 +102,80 @@ class _HomeState extends State<Home> {
           ),
         ),
         body: SafeArea(
-          child: ListView(
-            controller: _scrollController,
+          child: Column(
             children: [
-              SizedBox(
-                height: 1200,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      const Text("BYFIX TEST"),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/rgb');
-                        },
-                        child: const Text("RGB"),
-                      ),
-                    ],
-                  ),
+              Container(
+                margin: const EdgeInsets.only(top: 15, bottom: 15),
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(50),
+                  color: kSecColor,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    PageButton(
+                      id: 0,
+                      page: _page,
+                      title: "Market",
+                      onPress: () {
+                        setState(() {
+                          _pageController.animateToPage(
+                            0,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.bounceIn,
+                          );
+                        });
+                      },
+                    ),
+                    PageButton(
+                      id: 1,
+                      page: _page,
+                      onPress: () {
+                        setState(() {
+                          _pageController.animateToPage(
+                            1,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.bounceIn,
+                          );
+                        });
+                      },
+                      title: "Aracım",
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: onPageChanged,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    ShopPage(scrollController: _scrollController),
+                    ListView(
+                      controller: _scrollController,
+                      children: [
+                        SizedBox(
+                          height: 1200,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                const Text("BYFIX TEST"),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/rgb');
+                                  },
+                                  child: const Text("RGB"),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],

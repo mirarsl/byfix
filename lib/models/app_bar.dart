@@ -16,24 +16,21 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(80);
+  Size get preferredSize => const Size.fromHeight(headerHeight);
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      height: headerHeight,
+      height: hideAppBar ? headerHeight : MediaQuery.of(context).padding.top,
       duration: const Duration(milliseconds: 300),
       child: AppBar(
         leading: drawer,
         title: kLogo,
         actions: actionList,
-        toolbarHeight: 80,
+        toolbarHeight: headerHeight,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
-            bottomRight: Radius.elliptical(
-              120,
-              120,
-            ),
+            bottomRight: Radius.elliptical(120, 120),
           ),
         ),
         centerTitle: true,
