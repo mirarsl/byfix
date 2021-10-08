@@ -1,5 +1,6 @@
-import 'package:ByFix/views/home.dart';
-import 'package:ByFix/views/rgb.dart';
+import 'package:byfix/models/consts.dart';
+import 'package:byfix/views/home.dart';
+import 'package:byfix/views/rgb.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -19,11 +20,12 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       initialRoute: '/',
       theme: ThemeData(
-        primaryColor: Color(0xFF000000),
+        primaryColor: kPriColor,
+        secondaryHeaderColor: kSecColor,
       ),
       routes: {
-        '/': (context) => Home(),
-        '/rgb': (context) => RGB(),
+        '/': (context) => const Home(),
+        '/rgb': (context) => const RGB(),
       },
     );
   }

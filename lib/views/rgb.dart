@@ -14,8 +14,6 @@ class RGB extends StatefulWidget {
 }
 
 enum _DeviceAvailability {
-  no,
-  maybe,
   yes,
 }
 
@@ -36,17 +34,21 @@ class _DeviceWithAvailability {
 
 class _RGBState extends State<RGB> {
   final _controller = CircleColorPickerController(
-    initialColor: Color(0xFFC06437),
+    initialColor: const Color(0xFFC06437),
   );
 
   List<_DeviceWithAvailability> devices =
       List<_DeviceWithAvailability>.empty(growable: true);
 
+  BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
+  FlutterBluetoothSerial bluetooth = FlutterBluetoothSerial.instance;
   BluetoothConnection? connection;
+  bool get isConnected => connection != null && connection!.isConnected;
   BluetoothDevice? selectedDevice;
 
   StreamSubscription<BluetoothDiscoveryResult>? _discoveryStreamSubscription;
   bool _isDiscovering = false;
+  bool _isConnected = false;
 
   _RGBState();
 
@@ -59,8 +61,7 @@ class _RGBState extends State<RGB> {
   }
 
   void _startDiscovery() {
-    _discoveryStreamSubscription =
-        FlutterBluetoothSerial.instance.startDiscovery().listen((r) {
+    _discoveryStreamSubscription = bluetooth.startDiscovery().listen((r) {
       setState(() {
         Iterator i = devices.iterator;
         while (i.moveNext()) {
@@ -82,7 +83,18 @@ class _RGBState extends State<RGB> {
 
 //TODO bluetooth açık mı kontrol etme
   void connectBluetooth() async {
-    await FlutterBluetoothSerial.instance
+    await bluetooth.state.then((state) {
+      setState(() {
+        _bluetoothState = state;
+      });
+    });
+    await enableBluetooth();
+
+    if (!mounted) {
+      return;
+    }
+
+    await bluetooth
         .getBondedDevices()
         .then((List<BluetoothDevice> bondedDevices) {
       setState(() {
@@ -101,30 +113,36 @@ class _RGBState extends State<RGB> {
       if (_device.device.name == "HC-06" || _device.device.name == "ByFix") {
         setState(() {
           selectedDevice = _device.device;
-          print(selectedDevice!.address);
-
-          // BluetoothConnection.toAddress(selectedDevice!.address)
-          //     .then((_connection) {
-          //   print('Connected to the device');
-          //   connection = _connection;
-          // }).catchError((error) {
-          //   Navigator.of(context).pop();
-          // });
+          BluetoothConnection.toAddress(selectedDevice!.address)
+              .then((_connection) {
+            setState(() {
+              connection = _connection;
+              _isConnected = true;
+            });
+          }).catchError((error) {
+            setState(() {
+              _isConnected = false;
+              Navigator.of(context).pop();
+            });
+          });
         });
       }
     }).toList();
   }
-//TODO veri gönderme
 
   void sendRGB(String rgb) async {
-    print(rgb);
-
     try {
       connection!.output.add(Uint8List.fromList(utf8.encode(rgb + "\r\n")));
-      print(rgb);
       await connection!.output.allSent;
     } catch (e) {
       setState(() {});
+    }
+  }
+
+  Future<void> enableBluetooth() async {
+    _bluetoothState = await FlutterBluetoothSerial.instance.state;
+    if (_bluetoothState == BluetoothState.STATE_OFF) {
+      await FlutterBluetoothSerial.instance.requestEnable();
     }
   }
 
@@ -137,6 +155,7 @@ class _RGBState extends State<RGB> {
     super.initState();
   }
 
+  @override
   void dispose() {
     _discoveryStreamSubscription?.cancel();
 
@@ -154,13 +173,24 @@ class _RGBState extends State<RGB> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             const SizedBox(height: 48),
+            Text(
+              _isConnected
+                  ? "Bağlandı".toUpperCase()
+                  : "Bağlanıyor".toUpperCase(),
+              style: TextStyle(
+                fontSize: 36,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
             Center(
               child: CircleColorPicker(
                 strokeWidth: 8,
                 thumbSize: 50,
                 controller: _controller,
                 onChanged: (color) {
-                  sendRGB("${color.red},${color.green},${color.blue}");
+                  setState(() {
+                    sendRGB("${color.red},${color.green},${color.blue}");
+                  });
                 },
               ),
             ),
