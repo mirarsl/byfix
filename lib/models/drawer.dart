@@ -2,6 +2,7 @@ import 'package:byfix/models/consts.dart';
 import 'package:flutter/material.dart';
 
 class MyDrawer extends StatelessWidget {
+  MyDrawer({Key? key}) : super(key: key);
   List<Widget> mainMenu = [
     ListTile(
       onTap: () {},
@@ -97,8 +98,8 @@ class MyDrawer extends StatelessWidget {
     ),
     ListTile(
       onTap: () {},
-      leading: Icon(Icons.call),
-      title: Text('İletişim'),
+      leading: const Icon(Icons.call),
+      title: const Text('İletişim'),
     ),
   ];
 

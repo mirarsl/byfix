@@ -8,12 +8,13 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
   final ScrollController controller;
   final Widget drawer;
 
-  MyAppBar({
+  const MyAppBar({
+    Key? key,
     required this.hideAppBar,
     required this.actionList,
     required this.controller,
     required this.drawer,
-  });
+  }) : super(key: key);
 
   @override
   Size get preferredSize => const Size.fromHeight(headerHeight);
