@@ -1,8 +1,19 @@
+import 'dart:convert';
+
+import 'package:byfix/controllers/functions.dart';
 import 'package:byfix/models/consts.dart';
+import 'package:byfix/models/discount_products.dart';
+import 'package:byfix/models/last_products.dart';
+import 'package:byfix/models/section_title.dart';
+import 'package:byfix/models/single_campaign.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:line_icons/line_icons.dart';
+import 'package:loader_overlay/src/overlay_controller_widget_extension.dart';
+import 'package:provider/provider.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class ShopPage extends StatefulWidget {
   const ShopPage({
@@ -18,10 +29,104 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
-  // final CarouselController _carouselController = CarouselController();
+  final RefreshController _refreshController =
+      RefreshController(initialRefresh: false);
+  String _loadingText = "Sürükle";
+
+  void _onRefresh() async {
+    context.loaderOverlay.show();
+    await syncPage();
+    _refreshController.refreshCompleted();
+    context.loaderOverlay.hide();
+  }
+
+  Map campaigns = {};
+  bool hasCampaigns = true;
+  Future<dynamic> getCampaigns() async {
+    campaigns = {};
+    var data =
+        await Provider.of<Functions>(context, listen: false).getCampaigns();
+    var json = jsonDecode(data);
+    if (json["data"].length == 0) {
+      hasCampaigns = false;
+    } else {
+      for (int i = 0; i < json["data"].length; i++) {
+        campaigns.addAll({
+          i: {
+            'id': json["data"][i]['id'],
+            'title': json["data"][i]["baslik"],
+            'gorsel': "$kApiImg/services/${json["data"][i]['gorsel']}",
+          }
+        });
+      }
+    }
+  }
+
+  Map discounts = {};
+  bool hasDiscount = true;
+  Future<dynamic> getDiscounts() async {
+    discounts = {};
+    var data =
+        await Provider.of<Functions>(context, listen: false).getDiscounts();
+    var json = jsonDecode(data);
+    if (json["data"].length == 0) {
+      hasDiscount = false;
+    } else {
+      for (int i = 0; i < json["data"].length; i++) {
+        discounts.addAll({
+          i: {
+            'id': json["data"][i]['id'],
+            'title': json["data"][i]["baslik"],
+            'category': Provider.of<Functions>(context, listen: false)
+                .categories[int.parse(json["data"][i]["kat_id"])]["title"],
+            'image': "$kApiImg/product/${json["data"][i]['gorsel']}",
+            'price': double.parse(json["data"][i]['fiyat']),
+            'old_price': double.parse(json["data"][i]['eski_fiyat']),
+          }
+        });
+      }
+    }
+  }
+
+  Map products = {};
+  bool hasProducts = true;
+  Future<dynamic> getProducts() async {
+    products = {};
+    var data =
+        await Provider.of<Functions>(context, listen: false).getProducts();
+    var json = jsonDecode(data);
+    if (json["data"].length == 0) {
+      hasProducts = false;
+    } else {
+      for (int i = 0; i < json["data"].length; i++) {
+        products.addAll({
+          i: {
+            'id': json["data"][i]['id'],
+            'title': json["data"][i]["baslik"],
+            'category': Provider.of<Functions>(context, listen: false)
+                .categories[int.parse(json["data"][i]["kat_id"])]["title"],
+            'image': "$kApiImg/product/${json["data"][i]['gorsel']}",
+            'price': double.parse(json["data"][i]['fiyat']),
+            'old_price': json["data"][i]['eski_fiyat'] != ""
+                ? double.parse(json["data"][i]['eski_fiyat'])
+                : 0.0
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> syncPage() async {
+    await Provider.of<Functions>(context, listen: false).getCategories();
+    await getCampaigns();
+    await getDiscounts();
+    await getProducts();
+    setState(() {});
+  }
 
   @override
   void initState() {
+    syncPage();
     super.initState();
   }
 
@@ -32,19 +137,180 @@ class _ShopPageState extends State<ShopPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      controller: widget._scrollController,
-      children: [
-        CarouselSlider(
-          options: CarouselOptions(
-            scrollPhysics: const ClampingScrollPhysics(),
-            enableInfiniteScroll: false,
-            height: 240,
-            initialPage: 0,
-            viewportFraction: .9,
+    return SmartRefresher(
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      enablePullUp: false,
+      header: BezierHeader(
+        onModeChange: (val) {
+          if (val == RefreshStatus.canRefresh) {
+            setState(() {
+              _loadingText = "Yenilemek için sürüklemeyi bırak.";
+            });
+          } else if (val == RefreshStatus.refreshing) {
+            setState(() {
+              _loadingText = "Yenileniyor";
+            });
+          } else if (val == RefreshStatus.idle) {
+            setState(() {
+              _loadingText = "Sürükle";
+            });
+          } else if (val == RefreshStatus.completed) {
+            setState(() {
+              _loadingText = "Yenilendi";
+            });
+          }
+        },
+        child: Center(
+          child: Text(
+            _loadingText.toUpperCase(),
+            style: const TextStyle(
+              color: Colors.white,
+              letterSpacing: 1.5,
+              fontSize: 14,
+            ),
           ),
-          items: [1, 2, 3, 4, 5]
-              .map((item) => Container(
+        ),
+        rectHeight: 50,
+      ),
+      child: ListView(
+        controller: widget._scrollController,
+        children: [
+          Container(
+            padding: kSection,
+            child: OutlinedButton(
+              style: ButtonStyle(
+                backgroundColor:
+                    MaterialStateProperty.all(const Color(0xFFC7C7C7)),
+                shape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                ),
+                side: MaterialStateProperty.all(BorderSide.none),
+                overlayColor: MaterialStateProperty.all(Colors.transparent),
+              ),
+              onPressed: () {
+                //TODO Arama sayfası yapılacak
+              },
+              child: Row(
+                children: [
+                  Icon(
+                    LineIcons.search,
+                    color: Theme.of(context).secondaryHeaderColor,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    "Arama Yapmak İçin Tıklayınız",
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      fontSize: 14,
+                      letterSpacing: .5,
+                      color: Theme.of(context).secondaryHeaderColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          campaigns.isNotEmpty
+              ? CarouselSlider(
+                  options: CarouselOptions(
+                    scrollPhysics: const ClampingScrollPhysics(),
+                    enableInfiniteScroll: false,
+                    height: 240,
+                    initialPage: 0,
+                    viewportFraction: .9,
+                  ),
+                  items: campaigns.entries.map((item) {
+                    return SingleCampaign(
+                      image: item.value['gorsel'],
+                      id: item.value['id'],
+                    );
+                  }).toList(),
+                )
+              : hasCampaigns
+                  ? const SingleCampaignSkeleton()
+                  : const SizedBox(),
+          discounts.isNotEmpty
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle(title: "İNDİRİMLİ ÜRÜNLER"),
+                    CarouselSlider(
+                      options: CarouselOptions(
+                        scrollPhysics: const ClampingScrollPhysics(),
+                        initialPage: 0,
+                        enableInfiniteScroll: false,
+                        viewportFraction: .9,
+                        height: 220,
+                      ),
+                      items: discounts.entries
+                          .map(
+                            (e) => DiscountProducts(
+                              id: e.value['id'],
+                              title: e.value['title'],
+                              category: e.value['category'],
+                              image: e.value['image'],
+                              price: e.value['price'],
+                              oldPrice: e.value['old_price'],
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                )
+              : hasDiscount
+                  ? const DiscountProductsSkeleton()
+                  : const SizedBox(),
+          products.isNotEmpty
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle(title: "SON ÜRÜNLER"),
+                    CarouselSlider(
+                      options: CarouselOptions(
+                        scrollPhysics: const ClampingScrollPhysics(),
+                        initialPage: 0,
+                        enableInfiniteScroll: false,
+                        viewportFraction: .9,
+                        height: 500,
+                      ),
+                      items: products.entries
+                          .map(
+                            (e) => LastProducts(
+                              image: e.value["image"],
+                              id: e.value["id"],
+                              title: e.value["title"],
+                              category: e.value["category"],
+                              price: e.value["price"],
+                              oldPrice: e.value["old_price"],
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                )
+              : hasProducts
+                  ? const LastProductsSkeleton()
+                  : const SizedBox(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionTitle(title: "BYFIX ARAÇLARI"),
+              CarouselSlider(
+                options: CarouselOptions(
+                  scrollPhysics: const ClampingScrollPhysics(),
+                  initialPage: 0,
+                  enableInfiniteScroll: false,
+                  viewportFraction: .9,
+                  height: 480,
+                ),
+                items: Provider.of<Functions>(context, listen: false)
+                    .cars
+                    .entries
+                    .map((e) {
+                  return Container(
                     margin: const EdgeInsets.symmetric(
                       vertical: 20,
                       horizontal: 10,
@@ -55,364 +321,86 @@ class _ShopPageState extends State<ShopPage> {
                       color: Colors.white,
                       borderRadius: kBorderRadius,
                     ),
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all(Colors.transparent),
-                        elevation: MaterialStateProperty.all(0),
-                        shape: MaterialStateProperty.all(
-                          RoundedRectangleBorder(
-                            borderRadius: kBorderRadius,
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                width: 5,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
                           ),
-                        ),
-                        padding: MaterialStateProperty.all(EdgeInsets.zero),
-                      ),
-                      onPressed: () {
-                        //TODO Kampanya Detayları
-                      },
-                      child: ClipRRect(
-                        borderRadius: kBorderRadius,
-                        child: Image.asset(
-                          'images/kampanya.jpeg',
                           width: double.infinity,
-                          fit: BoxFit.cover,
+                          padding: const EdgeInsets.all(10.0),
+                          height: 120,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Image.network(
+                                "$kApiImg/product-category/${e.value["gorsel"]}",
+                                width:
+                                    (MediaQuery.of(context).size.width - 80) /
+                                        2,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  e.value["title"],
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    letterSpacing: 1,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        Container(
+                          height: 320,
+                          child: Column(
+                            children: [1, 2, 3, 4]
+                                .map(
+                                  (e) => Container(
+                                    decoration: const BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          width: 1,
+                                          color: kSecColor,
+                                        ),
+                                      ),
+                                    ),
+                                    height: 80,
+                                    child: Row(
+                                      children: [
+                                        Image.network(
+                                          "https://byfixstore.com/images/product/6302131860945.png",
+                                          height: 60,
+                                        ),
+                                        const Expanded(
+                                          child: Text(
+                                            "Ürün Adı",
+                                            textAlign: TextAlign.left,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                      ],
                     ),
-                  ))
-              .toList(),
-        ),
-        Container(
-          padding: kSection,
-          child: OutlinedButton(
-            style: ButtonStyle(
-              backgroundColor:
-                  MaterialStateProperty.all(const Color(0xFFC7C7C7)),
-              shape: MaterialStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
+                  );
+                }).toList(),
               ),
-              side: MaterialStateProperty.all(BorderSide.none),
-              overlayColor: MaterialStateProperty.all(Colors.transparent),
-            ),
-            onPressed: () {
-              //TODO Arama sayfası yapılacak
-            },
-            child: Row(
-              children: [
-                Icon(
-                  LineIcons.search,
-                  color: Theme.of(context).secondaryHeaderColor,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  "Arama Yapmak İçin Tıklayınız",
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    fontSize: 14,
-                    letterSpacing: .5,
-                    color: Theme.of(context).secondaryHeaderColor,
-                  ),
-                ),
-              ],
-            ),
+            ],
           ),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: kSection,
-              child: Text(
-                "İNDİRİMLİ ÜRÜNLER",
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            CarouselSlider(
-              options: CarouselOptions(
-                scrollPhysics: const ClampingScrollPhysics(),
-                initialPage: 0,
-                enableInfiniteScroll: false,
-                viewportFraction: .9,
-                height: 220,
-              ),
-              items: [1, 2]
-                  .map(
-                    (e) => Container(
-                      margin: const EdgeInsets.symmetric(
-                        vertical: 20,
-                        horizontal: 10,
-                      ),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        boxShadow: kBoxShadow,
-                        color: Colors.white,
-                        borderRadius: kBorderRadius,
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            height: 100,
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  width: 5,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Image.network(
-                                    'https://byfixstore.com/images/product/1176771051209-586-part-2.png',
-                                    width: 150,
-                                    height: double.infinity,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(5),
-                                  width: 150,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "Wolkswagen".toUpperCase(),
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w300,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        "TAVAN SEPETİ".toUpperCase(),
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          overflow: TextOverflow.fade,
-                                          fontSize: 14,
-                                          letterSpacing: 1,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 25),
-                            height: 80,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      "5.000",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 26,
-                                      ),
-                                      textAlign: TextAlign.start,
-                                    ),
-                                    SizedBox(width: 2),
-                                    Text(
-                                      "₺",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Text(
-                                      "6.000₺",
-                                      style: TextStyle(
-                                        decoration: TextDecoration.lineThrough,
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      "1.000₺" " " "İndirim",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 12,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: kSection,
-              child: Text(
-                "SON ÜRÜNLER",
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            CarouselSlider(
-              options: CarouselOptions(
-                scrollPhysics: const ClampingScrollPhysics(),
-                initialPage: 0,
-                enableInfiniteScroll: false,
-                viewportFraction: .9,
-                height: 500,
-              ),
-              items: [1, 2, 3, 4, 5, 6]
-                  .map(
-                    (e) => Container(
-                      margin: const EdgeInsets.symmetric(
-                        vertical: 20,
-                        horizontal: 10,
-                      ),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        boxShadow: kBoxShadow,
-                        color: Colors.white,
-                        borderRadius: kBorderRadius,
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            height: 380,
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  width: 5,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Image.network(
-                                    'https://byfixstore.com/images/product/2821013102785-799.jpeg',
-                                    height: 300,
-                                    width: double.infinity,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(5),
-                                  height: 55,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "OUTDOOR".toUpperCase(),
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w300,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        "KAMP - BAHÇE KÜREĞİ".toUpperCase(),
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          overflow: TextOverflow.fade,
-                                          fontSize: 14,
-                                          letterSpacing: 1,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: 80,
-                            width: double.infinity,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Text(
-                                      "6.000₺",
-                                      style: TextStyle(
-                                        decoration: TextDecoration.lineThrough,
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Text(
-                                      "295",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 26,
-                                      ),
-                                      textAlign: TextAlign.start,
-                                    ),
-                                    SizedBox(width: 2),
-                                    Text(
-                                      "₺",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

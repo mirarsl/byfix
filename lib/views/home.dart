@@ -21,6 +21,8 @@ class _HomeState extends State<Home> {
   }
 
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController2 = ScrollController();
+
   bool _hideAppBar = true;
   bool isScrollingDown = false;
 
@@ -33,15 +35,16 @@ class _HomeState extends State<Home> {
     });
   }
 
-  @override
-  void initState() {
+  void initScroll() {
     _scrollController.addListener(() {
       if (_scrollController.position.userScrollDirection ==
           ScrollDirection.reverse) {
         if (!isScrollingDown) {
           setState(() {
-            isScrollingDown = true;
-            _hideAppBar = false;
+            if (_scrollController.offset > 240) {
+              isScrollingDown = true;
+              _hideAppBar = false;
+            }
           });
         }
       } else {
@@ -53,7 +56,31 @@ class _HomeState extends State<Home> {
         }
       }
     });
+    _scrollController2.addListener(() {
+      if (_scrollController2.position.userScrollDirection ==
+          ScrollDirection.reverse) {
+        if (!isScrollingDown) {
+          setState(() {
+            if (_scrollController2.offset > 240) {
+              isScrollingDown = true;
+              _hideAppBar = false;
+            }
+          });
+        }
+      } else {
+        if (isScrollingDown) {
+          setState(() {
+            isScrollingDown = false;
+            _hideAppBar = true;
+          });
+        }
+      }
+    });
+  }
 
+  @override
+  void initState() {
+    initScroll();
     _pageController = PageController(initialPage: _page);
     super.initState();
   }
@@ -105,43 +132,61 @@ class _HomeState extends State<Home> {
           child: Column(
             children: [
               Container(
-                margin: const EdgeInsets.only(top: 15, bottom: 15),
-                padding: const EdgeInsets.all(3),
+                width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(50),
-                  color: kSecColor,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    PageButton(
-                      id: 0,
-                      page: _page,
-                      title: "Market",
-                      onPress: () {
-                        setState(() {
-                          _pageController.animateToPage(
-                            0,
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.bounceIn,
-                          );
-                        });
-                      },
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.05),
+                      spreadRadius: 0,
+                      offset: const Offset(0, 13),
+                      blurRadius: 10,
                     ),
-                    PageButton(
-                      id: 1,
-                      page: _page,
-                      onPress: () {
-                        setState(() {
-                          _pageController.animateToPage(
-                            1,
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.bounceIn,
-                          );
-                        });
-                      },
-                      title: "Aracım",
+                  ],
+                  color: Theme.of(context).canvasColor,
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 15, bottom: 15),
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        color: kSecColor,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          PageButton(
+                            id: 0,
+                            page: _page,
+                            title: "Market",
+                            onPress: () {
+                              setState(() {
+                                _pageController.animateToPage(
+                                  0,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.bounceIn,
+                                );
+                              });
+                            },
+                          ),
+                          PageButton(
+                            id: 1,
+                            page: _page,
+                            onPress: () {
+                              setState(() {
+                                _pageController.animateToPage(
+                                  1,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.bounceIn,
+                                );
+                              });
+                            },
+                            title: "Aracım",
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -153,28 +198,7 @@ class _HomeState extends State<Home> {
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
                     ShopPage(scrollController: _scrollController),
-                    ListView(
-                      controller: _scrollController,
-                      children: [
-                        SizedBox(
-                          height: 1200,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                const Text("BYFIX TEST"),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, '/rgb');
-                                  },
-                                  child: const Text("RGB"),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    CarPage(scrollController: _scrollController2),
                   ],
                 ),
               ),
@@ -182,6 +206,47 @@ class _HomeState extends State<Home> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class CarPage extends StatefulWidget {
+  const CarPage({
+    Key? key,
+    required ScrollController scrollController,
+  })  : _scrollController = scrollController,
+        super(key: key);
+
+  final ScrollController _scrollController;
+
+  @override
+  State<CarPage> createState() => _CarPageState();
+}
+
+class _CarPageState extends State<CarPage> {
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      controller: widget._scrollController,
+      children: [
+        SizedBox(
+          height: 1200,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                const Text("BYFIX TEST"),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/rgb');
+                  },
+                  child: const Text("RGB"),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

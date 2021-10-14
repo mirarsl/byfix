@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+const kApiImg = "https://byfixstore.com/images";
 const kPriColor = Color(0xFFC06437);
 const kSecColor = Color(0xFF32353A);
 const double kSectionHorizontal = 25.0;
@@ -31,4 +32,29 @@ const kInputBorder = OutlineInputBorder(
 const kInputStyle = TextStyle(
   fontSize: 14,
   height: .5,
+);
+
+var kButtonStyle = ButtonStyle(
+  backgroundColor: MaterialStateProperty.all(kPriColor),
+  padding: MaterialStateProperty.all(
+    const EdgeInsets.symmetric(horizontal: 20),
+  ),
+  shape: MaterialStateProperty.all(
+    RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(50),
+    ),
+  ),
+);
+
+const kCircular = CircularProgressIndicator(
+  valueColor: AlwaysStoppedAnimation(kPriColor),
+  backgroundColor: kSecColor,
+  strokeWidth: 6,
+);
+
+const kWaiter = SizedBox(
+  height: 200,
+  child: Center(
+    child: kCircular,
+  ),
 );
