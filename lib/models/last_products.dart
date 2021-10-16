@@ -99,9 +99,11 @@ class LastProducts extends StatelessWidget {
             Container(
               height: 80,
               width: double.infinity,
-              padding: const EdgeInsets.only(right: 25, left: 50),
+              padding: EdgeInsets.only(right: 25, left: price != 0 ? 50 : 25),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: price != 0
+                    ? MainAxisAlignment.spaceBetween
+                    : MainAxisAlignment.center,
                 children: [
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,

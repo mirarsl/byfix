@@ -6,6 +6,8 @@ import 'package:byfix/models/discount_products.dart';
 import 'package:byfix/models/last_products.dart';
 import 'package:byfix/models/section_title.dart';
 import 'package:byfix/models/single_campaign.dart';
+import 'package:byfix/models/single_category.dart';
+import 'package:byfix/models/vertical_campaign.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -40,88 +42,130 @@ class _ShopPageState extends State<ShopPage> {
     context.loaderOverlay.hide();
   }
 
-  Map campaigns = {};
-  bool hasCampaigns = true;
-  Future<dynamic> getCampaigns() async {
-    campaigns = {};
-    var data =
-        await Provider.of<Functions>(context, listen: false).getCampaigns();
-    var json = jsonDecode(data);
-    if (json["data"].length == 0) {
-      hasCampaigns = false;
-    } else {
-      for (int i = 0; i < json["data"].length; i++) {
-        campaigns.addAll({
-          i: {
-            'id': json["data"][i]['id'],
-            'title': json["data"][i]["baslik"],
-            'gorsel': "$kApiImg/services/${json["data"][i]['gorsel']}",
-          }
-        });
+  Map horizontalCampaigns = {};
+  bool hasHorizontalCampaigns = true;
+  Future<dynamic> getHorizontalCampaigns() async {
+    try {
+      horizontalCampaigns = {};
+      var data = await Provider.of<Functions>(context, listen: false)
+          .getHorizontalCampaigns();
+      var json = jsonDecode(data);
+      if (json["data"].length == 0) {
+        hasHorizontalCampaigns = false;
+      } else {
+        for (int i = 0; i < json["data"].length; i++) {
+          horizontalCampaigns.addAll({
+            i: {
+              'id': json["data"][i]['id'],
+              'title': json["data"][i]["baslik"],
+              'gorsel': "$kApiImg/services/${json["data"][i]['gorsel']}",
+            }
+          });
+        }
       }
+    } catch (e) {
+      print(e);
     }
+    setState(() {});
+  }
+
+  Map verticalCampaigns = {};
+  bool hasVerticalCampaigns = true;
+  Future<dynamic> getVerticalCampaigns() async {
+    try {
+      verticalCampaigns = {};
+      var data = await Provider.of<Functions>(context, listen: false)
+          .getVerticalCampaigns();
+      var json = jsonDecode(data);
+      if (json["data"].length == 0) {
+        hasVerticalCampaigns = false;
+      } else {
+        for (int i = 0; i < json["data"].length; i++) {
+          verticalCampaigns.addAll({
+            i: {
+              'id': json["data"][i]['id'],
+              'title': json["data"][i]["baslik"],
+              'gorsel': "$kApiImg/services/${json["data"][i]['gorsel']}",
+            }
+          });
+        }
+      }
+    } catch (e) {
+      print(e);
+    }
+    setState(() {});
   }
 
   Map discounts = {};
   bool hasDiscount = true;
   Future<dynamic> getDiscounts() async {
-    discounts = {};
-    var data =
-        await Provider.of<Functions>(context, listen: false).getDiscounts();
-    var json = jsonDecode(data);
-    if (json["data"].length == 0) {
-      hasDiscount = false;
-    } else {
-      for (int i = 0; i < json["data"].length; i++) {
-        discounts.addAll({
-          i: {
-            'id': json["data"][i]['id'],
-            'title': json["data"][i]["baslik"],
-            'category': Provider.of<Functions>(context, listen: false)
-                .categories[int.parse(json["data"][i]["kat_id"])]["title"],
-            'image': "$kApiImg/product/${json["data"][i]['gorsel']}",
-            'price': double.parse(json["data"][i]['fiyat']),
-            'old_price': double.parse(json["data"][i]['eski_fiyat']),
-          }
-        });
+    try {
+      discounts = {};
+      var data =
+          await Provider.of<Functions>(context, listen: false).getDiscounts();
+      var json = jsonDecode(data);
+      if (json["data"].length == 0) {
+        hasDiscount = false;
+      } else {
+        for (int i = 0; i < json["data"].length; i++) {
+          discounts.addAll({
+            i: {
+              'id': json["data"][i]['id'],
+              'title': json["data"][i]["baslik"],
+              'category': Provider.of<Functions>(context, listen: false)
+                  .categories[int.parse(json["data"][i]["kat_id"])]["title"],
+              'image': "$kApiImg/product/${json["data"][i]['gorsel']}",
+              'price': double.parse(json["data"][i]['fiyat']),
+              'old_price': double.parse(json["data"][i]['eski_fiyat']),
+            }
+          });
+        }
       }
+    } catch (e) {
+      print(e);
     }
+    setState(() {});
   }
 
   Map products = {};
   bool hasProducts = true;
   Future<dynamic> getProducts() async {
-    products = {};
-    var data =
-        await Provider.of<Functions>(context, listen: false).getProducts();
-    var json = jsonDecode(data);
-    if (json["data"].length == 0) {
-      hasProducts = false;
-    } else {
-      for (int i = 0; i < json["data"].length; i++) {
-        products.addAll({
-          i: {
-            'id': json["data"][i]['id'],
-            'title': json["data"][i]["baslik"],
-            'category': Provider.of<Functions>(context, listen: false)
-                .categories[int.parse(json["data"][i]["kat_id"])]["title"],
-            'image': "$kApiImg/product/${json["data"][i]['gorsel']}",
-            'price': double.parse(json["data"][i]['fiyat']),
-            'old_price': json["data"][i]['eski_fiyat'] != ""
-                ? double.parse(json["data"][i]['eski_fiyat'])
-                : 0.0
-          }
-        });
+    try {
+      products = {};
+      var data =
+          await Provider.of<Functions>(context, listen: false).getProducts();
+      var json = jsonDecode(data);
+      if (json["data"].length == 0) {
+        hasProducts = false;
+      } else {
+        for (int i = 0; i < json["data"].length; i++) {
+          products.addAll({
+            i: {
+              'id': json["data"][i]['id'],
+              'title': json["data"][i]["baslik"],
+              'category': Provider.of<Functions>(context, listen: false)
+                  .categories[int.parse(json["data"][i]["kat_id"])]["title"],
+              'image': "$kApiImg/product/${json["data"][i]['gorsel']}",
+              'price': double.parse(json["data"][i]['fiyat']),
+              'old_price': json["data"][i]['eski_fiyat'] != ""
+                  ? double.parse(json["data"][i]['eski_fiyat'])
+                  : 0.0
+            }
+          });
+        }
       }
+    } catch (e) {
+      print(e);
     }
+    setState(() {});
   }
 
   Future<void> syncPage() async {
     await Provider.of<Functions>(context, listen: false).getCategories();
-    await getCampaigns();
-    await getDiscounts();
-    await getProducts();
-    setState(() {});
+    getHorizontalCampaigns();
+    getDiscounts();
+    getVerticalCampaigns();
+    getProducts();
   }
 
   @override
@@ -213,23 +257,23 @@ class _ShopPageState extends State<ShopPage> {
               ),
             ),
           ),
-          campaigns.isNotEmpty
+          horizontalCampaigns.isNotEmpty
               ? CarouselSlider(
                   options: CarouselOptions(
                     scrollPhysics: const ClampingScrollPhysics(),
                     enableInfiniteScroll: false,
-                    height: 240,
+                    height: 230,
                     initialPage: 0,
                     viewportFraction: .9,
                   ),
-                  items: campaigns.entries.map((item) {
+                  items: horizontalCampaigns.entries.map((item) {
                     return SingleCampaign(
                       image: item.value['gorsel'],
                       id: item.value['id'],
                     );
                   }).toList(),
                 )
-              : hasCampaigns
+              : hasHorizontalCampaigns
                   ? const SingleCampaignSkeleton()
                   : const SizedBox(),
           discounts.isNotEmpty
@@ -263,6 +307,31 @@ class _ShopPageState extends State<ShopPage> {
               : hasDiscount
                   ? const DiscountProductsSkeleton()
                   : const SizedBox(),
+          verticalCampaigns.isNotEmpty
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle(title: "KAMPANYALAR"),
+                    CarouselSlider(
+                      options: CarouselOptions(
+                        scrollPhysics: const ClampingScrollPhysics(),
+                        enableInfiniteScroll: false,
+                        height: 400,
+                        initialPage: 0,
+                        viewportFraction: .9,
+                      ),
+                      items: verticalCampaigns.entries.map((item) {
+                        return VerticalCampaign(
+                          image: item.value['gorsel'],
+                          id: item.value['id'],
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                )
+              : hasVerticalCampaigns
+                  ? const VerticalCampaignSkeleton()
+                  : const SizedBox(),
           products.isNotEmpty
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,111 +363,36 @@ class _ShopPageState extends State<ShopPage> {
               : hasProducts
                   ? const LastProductsSkeleton()
                   : const SizedBox(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionTitle(title: "BYFIX ARAÇLARI"),
-              CarouselSlider(
-                options: CarouselOptions(
-                  scrollPhysics: const ClampingScrollPhysics(),
-                  initialPage: 0,
-                  enableInfiniteScroll: false,
-                  viewportFraction: .9,
-                  height: 480,
-                ),
-                items: Provider.of<Functions>(context, listen: false)
-                    .cars
-                    .entries
-                    .map((e) {
-                  return Container(
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 10,
+          Provider.of<Functions>(context, listen: false).categories.isNotEmpty
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle(title: "KATEGORİLER"),
+                    CarouselSlider(
+                      options: CarouselOptions(
+                        scrollPhysics: const ClampingScrollPhysics(),
+                        initialPage: 0,
+                        enableInfiniteScroll: false,
+                        viewportFraction: .9,
+                        height: 480,
+                      ),
+                      items: Provider.of<Functions>(context, listen: false)
+                          .categories
+                          .entries
+                          .map((e) {
+                        return SingleCategory(
+                          image: e.value["icon"],
+                          title: e.value["title"],
+                          list: e.value["products"],
+                          id: e.value["id"],
+                        );
+                      }).toList(),
                     ),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      boxShadow: kBoxShadow,
-                      color: Colors.white,
-                      borderRadius: kBorderRadius,
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                width: 5,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          ),
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(10.0),
-                          height: 120,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Image.network(
-                                "$kApiImg/product-category/${e.value["gorsel"]}",
-                                width:
-                                    (MediaQuery.of(context).size.width - 80) /
-                                        2,
-                              ),
-                              Expanded(
-                                child: Text(
-                                  e.value["title"],
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    letterSpacing: 1,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          height: 320,
-                          child: Column(
-                            children: [1, 2, 3, 4]
-                                .map(
-                                  (e) => Container(
-                                    decoration: const BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          width: 1,
-                                          color: kSecColor,
-                                        ),
-                                      ),
-                                    ),
-                                    height: 80,
-                                    child: Row(
-                                      children: [
-                                        Image.network(
-                                          "https://byfixstore.com/images/product/6302131860945.png",
-                                          height: 60,
-                                        ),
-                                        const Expanded(
-                                          child: Text(
-                                            "Ürün Adı",
-                                            textAlign: TextAlign.left,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+                  ],
+                )
+              : Provider.of<Functions>(context, listen: false).hasCategories
+                  ? const SingleCategorySkeleton()
+                  : const SizedBox(),
         ],
       ),
     );

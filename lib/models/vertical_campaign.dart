@@ -3,11 +3,11 @@ import 'package:skeleton_loader/skeleton_loader.dart';
 
 import 'consts.dart';
 
-class SingleCampaign extends StatelessWidget {
+class VerticalCampaign extends StatelessWidget {
   final String image;
   final int id;
 
-  const SingleCampaign({
+  const VerticalCampaign({
     required this.image,
     required this.id,
     Key? key,
@@ -55,8 +55,8 @@ class SingleCampaign extends StatelessWidget {
   }
 }
 
-class SingleCampaignSkeleton extends StatelessWidget {
-  const SingleCampaignSkeleton({
+class VerticalCampaignSkeleton extends StatelessWidget {
+  const VerticalCampaignSkeleton({
     Key? key,
   }) : super(key: key);
 
@@ -64,7 +64,7 @@ class SingleCampaignSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SkeletonLoader(
       builder: Container(
-        height: 200,
+        height: 400,
         margin: const EdgeInsets.symmetric(
           vertical: 20,
           horizontal: 20,

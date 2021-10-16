@@ -4,16 +4,16 @@ import 'consts.dart';
 
 class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool hideAppBar;
-  final List<Widget> actionList;
+  final List<Widget>? actionList;
   final ScrollController controller;
-  final Widget drawer;
+  final Widget? drawer;
 
   const MyAppBar({
     Key? key,
     required this.hideAppBar,
-    required this.actionList,
+    this.actionList,
     required this.controller,
-    required this.drawer,
+    this.drawer,
   }) : super(key: key);
 
   @override
