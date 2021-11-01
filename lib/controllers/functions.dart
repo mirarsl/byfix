@@ -29,6 +29,16 @@ class Functions with ChangeNotifier, DiagnosticableTreeMixin {
     return data;
   }
 
+  Future<dynamic> getFixedPages() async {
+    var data = await Network(url: "pages").getData();
+    return data;
+  }
+
+  Future<dynamic> getFixedPageDetails(int id) async {
+    var data = await Network(url: "pages/$id").getData();
+    return data;
+  }
+
   Future<dynamic> getHorizontalCampaigns() async {
     var data = await Network(url: "kampanya", parameters: "filter=0").getData();
     return data;

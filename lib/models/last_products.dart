@@ -1,5 +1,8 @@
+import 'package:byfix/controllers/functions.dart';
+import 'package:byfix/views/product_details.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:skeleton_loader/skeleton_loader.dart';
 
 import 'add_cart.dart';
@@ -40,7 +43,11 @@ class LastProducts extends StatelessWidget {
       child: MaterialButton(
         padding: EdgeInsets.zero,
         onPressed: () {
-          print(id);
+          Navigator.of(context).push(
+            Provider.of<Functions>(context, listen: false).customRoute(
+              ProductDetails(id: id),
+            ),
+          );
         },
         child: Column(
           children: [

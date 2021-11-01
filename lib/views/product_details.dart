@@ -2,14 +2,23 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:byfix/controllers/functions.dart';
+import 'package:byfix/models/add_cart.dart';
 import 'package:byfix/models/app_bar.dart';
 import 'package:byfix/models/consts.dart';
+import 'package:byfix/models/product_picture.dart';
+import 'package:byfix/models/single_variant.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:interactiveviewer_gallery/hero_dialog_route.dart';
+import 'package:interactiveviewer_gallery/interactiveviewer_gallery.dart';
+import 'package:intl/intl.dart';
+import 'package:line_icons/line_icons.dart';
+import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
-import 'package:simple_shadow/simple_shadow.dart';
 import 'package:skeleton_loader/skeleton_loader.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class ProductDetails extends StatefulWidget {
   final int id;
@@ -28,6 +37,7 @@ class _ProductDetailsState extends State<ProductDetails> {
 
   bool _hideAppBar = true;
   bool isScrollingDown = false;
+  bool _showBorder = false;
 
   int _current = 0;
 
@@ -55,9 +65,23 @@ class _ProductDetailsState extends State<ProductDetails> {
   }
 
   Map details = {};
+
   List pictures = [];
+  bool noPictures = false;
+  List allPicList = [];
+
   List variants = [];
+  bool hasVariant = true;
+  Map? variantAnswers = {};
+
   List comments = [];
+  bool noComment = false;
+  double starPoint = 0;
+  List stars = [];
+  Map starCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+
+  String? kargoKalan;
+
   Future<void> getDetails() async {
     try {
       details = {};
@@ -65,23 +89,104 @@ class _ProductDetailsState extends State<ProductDetails> {
           .getProductDetails(widget.id);
       var json = jsonDecode(data);
       details = json["data"];
+      allPicList.add("$kApiImg/product/${details["gorsel"]}");
       pictures = details["includes"]["pictures"];
-      // comments = details["includes"]["comments"];
-      // variants = details["variants"];
+      if (pictures.isEmpty) {
+        noPictures = true;
+      } else {
+        for (var element in pictures) {
+          allPicList.add("$kApiImg/product/${element["gorsel"]}");
+        }
+      }
+      comments = details["includes"]["comments"];
+
+      starPoint = 0;
+
+      if (comments.isEmpty) {
+        noComment = true;
+      } else {
+        comments.forEach((element) {
+          starPoint = starPoint + double.parse(element["yildiz"]);
+          if (int.parse(element["yildiz"]) == 5) {
+            starCounts[5]++;
+          } else if (int.parse(element["yildiz"]) >= 4) {
+            starCounts[4]++;
+          } else if (int.parse(element["yildiz"]) >= 3) {
+            starCounts[3]++;
+          } else if (int.parse(element["yildiz"]) >= 2) {
+            starCounts[2]++;
+          } else if (int.parse(element["yildiz"]) >= 1) {
+            starCounts[1]++;
+          }
+        });
+
+        starPoint = starPoint / comments.length;
+        if (starPoint == 5) {
+          stars = [1, 1, 1, 1, 1];
+        } else if (starPoint >= 4) {
+          stars = [1, 1, 1, 1, 0];
+        } else if (starPoint >= 3) {
+          stars = [1, 1, 1, 0, 0];
+        } else if (starPoint >= 2) {
+          stars = [1, 1, 0, 0, 0];
+        } else if (starPoint >= 1) {
+          stars = [1, 0, 0, 0, 0];
+        }
+      }
+
+      if (details["variants"] != null) {
+        variants = details["variants"];
+        for (int i = 0; i < variants.length; i++) {
+          variantAnswers![variants[i]["id"]] = null;
+        }
+      } else {
+        hasVariant = false;
+      }
       setState(() {});
     } catch (e) {
       print(json);
     }
   }
 
+  String sozlesme = "";
+  Future<void> getDocument() async {
+    try {
+      var data = await Provider.of<Functions>(context, listen: false)
+          .getFixedPageDetails(7);
+      var json = jsonDecode(data);
+      sozlesme = json["data"]["icerik"];
+    } finally {}
+  }
+
   Future<void> asyncPage() async {
     await getDetails();
+    getDocument();
+    final nowDate = DateTime.now();
+    final lastDate =
+        DateTime(nowDate.year, nowDate.month, nowDate.day, 20, 0, 0);
+    final duration = nowDate.difference(lastDate);
+    if (duration < Duration.zero) {
+      if (duration.inMinutes < 0) {
+        int minute = duration.inMinutes * -1;
+        int saat = minute ~/ 60;
+        minute = minute % 60;
+        if (saat > 0) {
+          kargoKalan = "$saat Saat ";
+          if (minute > 0) {
+            kargoKalan = "$kargoKalan$minute Dakika";
+          }
+        } else if (minute > 0) {
+          kargoKalan = "$minute Dakika";
+        }
+      }
+    }
   }
 
   @override
   void initState() {
     initScroll();
     asyncPage();
+
     super.initState();
   }
 
@@ -93,131 +198,701 @@ class _ProductDetailsState extends State<ProductDetails> {
 
   @override
   Widget build(BuildContext context) {
+    var formatter =
+        NumberFormat.currency(locale: 'tr', symbol: '', decimalDigits: 2);
+    double price = 0.0;
+    double old_price = 0.0;
+    if (details.isNotEmpty) {
+      if (details["fiyat"] != null) {
+        price = double.parse(details["fiyat"]);
+      }
+      if (details["eski_fiyat"] != "") {
+        old_price = double.parse(details["eski_fiyat"]);
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: MyAppBar(
         controller: _scrollController,
         hideAppBar: _hideAppBar,
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.10),
-                    spreadRadius: 0,
-                    offset: const Offset(0, 50),
-                    blurRadius: 50,
-                  ),
-                ],
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(150),
-                  bottomRight: Radius.circular(150),
-                ),
-              ),
-              margin: const EdgeInsets.symmetric(
-                vertical: kSectionVertical,
-              ),
-              height: 400,
-              child: pictures.isNotEmpty
-                  ? Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.only(bottom: 35),
-                          child: CarouselSlider(
-                            carouselController: _carouselController,
-                            options: CarouselOptions(
-                              onPageChanged: (index, reason) {
-                                setState(() {
-                                  _current = index;
-                                });
-                              },
-                              scrollPhysics: ClampingScrollPhysics(),
-                              viewportFraction: 1,
-                              height: 400,
-                              initialPage: 0,
-                              enableInfiniteScroll: false,
-                              aspectRatio: 16 / 9,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: ListView(
+              physics: const ClampingScrollPhysics(),
+              controller: _scrollController,
+              children: [
+                pictures.isNotEmpty || noPictures
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(.10),
+                              spreadRadius: 0,
+                              offset: const Offset(0, 50),
+                              blurRadius: 50,
                             ),
-                            items: <Widget>[
-                                  ProductPicture(
-                                      image:
-                                          "$kApiImg/product/${details["gorsel"]}"),
-                                ] +
-                                pictures
-                                    .map(
-                                      (e) => ProductPicture(
-                                          image:
-                                              "$kApiImg/product/${e["gorsel"]}"),
-                                    )
-                                    .toList(),
+                          ],
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(150),
                           ),
                         ),
-                        Positioned(
-                          bottom: 15,
-                          child: SizedBox(
-                            width: 60,
-                            child: ClipRRect(
-                              borderRadius: kBorderRadius,
-                              child: LinearProgressIndicator(
-                                minHeight: 5,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  kPriColor,
+                        margin: const EdgeInsets.symmetric(
+                          vertical: kSectionVertical,
+                        ),
+                        height: 480,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.only(bottom: 35),
+                              child: CarouselSlider(
+                                carouselController: _carouselController,
+                                options: CarouselOptions(
+                                  onPageChanged: (index, reason) {
+                                    setState(() {
+                                      _current = index;
+                                    });
+                                  },
+                                  scrollPhysics: const ClampingScrollPhysics(),
+                                  viewportFraction: 1,
+                                  height: 400,
+                                  initialPage: 0,
+                                  enableInfiniteScroll: false,
+                                  aspectRatio: 16 / 9,
                                 ),
-                                backgroundColor: kSecColor,
-                                value: (1 / (pictures.length) * _current),
+                                items: allPicList
+                                    .map(
+                                      (e) => ProductPicture(
+                                        image: e,
+                                        onPress: () {
+                                          Navigator.of(context).push(
+                                            HeroDialogRoute(
+                                              builder: (BuildContext context) =>
+                                                  InteractiveviewerGallery(
+                                                sources: allPicList,
+                                                maxScale: 5,
+                                                onPageChanged: (dir) {
+                                                  _carouselController
+                                                      .jumpToPage(dir);
+                                                },
+                                                initIndex:
+                                                    allPicList.indexOf(e),
+                                                itemBuilder:
+                                                    (context, index, status) =>
+                                                        Image.network(
+                                                  allPicList[index],
+                                                  fit: BoxFit.contain,
+                                                  height: MediaQuery.of(context)
+                                                      .size
+                                                      .width,
+                                                  loadingBuilder: (context,
+                                                      child, loadingProgress) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return const Center(
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        valueColor:
+                                                            AlwaysStoppedAnimation(
+                                                                kPriColor),
+                                                        strokeWidth: 2,
+                                                        backgroundColor:
+                                                            kSecColor,
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ),
+                            Positioned(
+                              bottom: 15,
+                              child: SizedBox(
+                                width: 60,
+                                child: ClipRRect(
+                                  borderRadius: kBorderRadius,
+                                  child: LinearProgressIndicator(
+                                    minHeight: 5,
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
+                                      kPriColor,
+                                    ),
+                                    backgroundColor: kSecColor,
+                                    value: noPictures
+                                        ? 1
+                                        : (1 / (pictures.length) * _current),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : SkeletonLoader(
+                        builder: Container(
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(150),
+                              bottomRight: Radius.circular(150),
+                            ),
+                            color: Colors.white,
+                          ),
+                          height: 480,
+                        ),
+                      ),
+                variants.isNotEmpty
+                    ? Column(
+                        children: variants.map((e) {
+                          return SingleVariant(
+                            name: e["baslik"],
+                            variants: e["options"],
+                            answer: variantAnswers != null
+                                ? variantAnswers![e["id"]]
+                                : null,
+                            onPress: (int id) {
+                              setState(() {
+                                variantAnswers![e["id"]] = id;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      )
+                    : hasVariant
+                        ? SkeletonLoader(
+                            builder: Container(
+                              height: 200,
+                              color: Colors.white,
+                              margin: const EdgeInsets.symmetric(
+                                vertical: kSectionVertical,
+                              ),
+                            ),
+                          )
+                        : const SizedBox(),
+                const SizedBox(height: 200),
+              ],
+            ),
+          ),
+          details.isNotEmpty
+              ? SlidingUpPanel(
+                  onPanelSlide: (dob) {
+                    setState(() {
+                      if (dob == 0) {
+                        _hideAppBar = true;
+                        _showBorder = false;
+                      } else if (dob > 0) {
+                        _hideAppBar = false;
+                        _showBorder = true;
+                      }
+                    });
+                  },
+                  minHeight: 200,
+                  maxHeight: MediaQuery.of(context).size.height,
+                  panel: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 8,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: kSectionHorizontal,
+                          ),
+                          decoration: BoxDecoration(
+                            color: kSecColor.withOpacity(.15),
+                            borderRadius: kBorderRadius,
+                          ),
+                        ),
+                        Container(
+                          height: 82,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: kSectionHorizontal,
+                          ),
+                          decoration: BoxDecoration(
+                            border: _showBorder
+                                ? const Border(
+                                    bottom: BorderSide(
+                                      width: 1,
+                                      color: kPriColor,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding:
+                                    const EdgeInsets.only(top: 15, bottom: 2),
+                                width: double.infinity,
+                                child: Text(
+                                  Provider.of<Functions>(context, listen: false)
+                                      .categories[int.parse(details["kat_id"])]
+                                          ['title']
+                                      .toString(),
+                                  textAlign: TextAlign.start,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: kPriColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                width: double.infinity,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            details["baslik"],
+                                            textAlign: TextAlign.start,
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            "#" + details["urun_kod"],
+                                            textAlign: TextAlign.start,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    comments.isNotEmpty
+                                        ? Column(
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    starPoint > 3.0
+                                                        ? LineIcons.starAlt
+                                                        : LineIcons.starHalfAlt,
+                                                    color: kPriColor,
+                                                    size: 18,
+                                                  ),
+                                                  const SizedBox(width: 3),
+                                                  Text(
+                                                    starPoint.toString(),
+                                                    style: const TextStyle(
+                                                      color: kPriColor,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 3),
+                                              Text(
+                                                comments.length.toString() +
+                                                    " Adet Oy",
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w300,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : const SizedBox(),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          color: Theme.of(context).canvasColor,
+                          height: MediaQuery.of(context).size.height - 110,
+                          child: ListView(
+                            physics: const ClampingScrollPhysics(),
+                            children: [
+                              kargoKalan != null
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 30,
+                                        horizontal: kSectionHorizontal,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        boxShadow: kBoxShadow,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            LineIcons.truckMoving,
+                                            color: kPriColor,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: RichText(
+                                              text: TextSpan(
+                                                text: "$kargoKalan",
+                                                style: const TextStyle(
+                                                  color: kPriColor,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                                children: const [
+                                                  TextSpan(
+                                                    text:
+                                                        " içerisinde sipariş verirsen",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text: " yarın",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text: " kargoda.",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : SizedBox(),
+                              Container(
+                                margin: EdgeInsets.only(
+                                  top: kargoKalan != null ? 10 : 0,
+                                  bottom: 10,
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  boxShadow: kBoxShadow,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    details['spot'] != ""
+                                        ? SingleExpansion(
+                                            title: "Ürün Özellikleri",
+                                            text: HtmlWidget(details["spot"]),
+                                            icon: LineIcons.table,
+                                          )
+                                        : const SizedBox(),
+                                    details["icerik"] != ""
+                                        ? SingleExpansion(
+                                            title: "Ürün Açıklamaları",
+                                            text: HtmlWidget(details["icerik"]),
+                                            icon: LineIcons.info,
+                                          )
+                                        : const SizedBox(),
+                                    sozlesme != ""
+                                        ? SingleExpansion(
+                                            title:
+                                                "Teslimat ve İade Sözleşmesi",
+                                            text: HtmlWidget(sozlesme),
+                                            icon: LineIcons.fileInvoice,
+                                          )
+                                        : const SizedBox(),
+                                    details["ek_bilgi"] != ""
+                                        ? SingleExpansion(
+                                            title: "Ek Bilgi",
+                                            text:
+                                                HtmlWidget(details["ek_bilgi"]),
+                                            icon: LineIcons.plus,
+                                          )
+                                        : const SizedBox(),
+                                    comments.isNotEmpty
+                                        ? SingleExpansion(
+                                            title: "Değerlendirmeler",
+                                            text: Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Column(
+                                                      children: [
+                                                        Text(
+                                                          starPoint.toString(),
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 36,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                          ),
+                                                        ),
+                                                        Container(
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                            vertical: 10,
+                                                          ),
+                                                          child: Row(
+                                                            children: stars
+                                                                .map(
+                                                                  (e) => Icon(
+                                                                    e == 1
+                                                                        ? LineIcons
+                                                                            .starAlt
+                                                                        : LineIcons
+                                                                            .star,
+                                                                    color:
+                                                                        kPriColor,
+                                                                  ),
+                                                                )
+                                                                .toList(),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          "${comments.length} Değerlendirme",
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        vertical:
+                                                            kSectionVertical,
+                                                        horizontal:
+                                                            kSectionHorizontal,
+                                                      ),
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .start,
+                                                        children:
+                                                            [5, 4, 3, 2, 1]
+                                                                .map(
+                                                                  (e) =>
+                                                                      Container(
+                                                                    margin: const EdgeInsets
+                                                                        .symmetric(
+                                                                      vertical:
+                                                                          2,
+                                                                    ),
+                                                                    child: Row(
+                                                                      children: [
+                                                                        const Icon(
+                                                                          LineIcons
+                                                                              .starAlt,
+                                                                          color:
+                                                                              kPriColor,
+                                                                          size:
+                                                                              16,
+                                                                        ),
+                                                                        Padding(
+                                                                          padding:
+                                                                              const EdgeInsets.symmetric(horizontal: 2.0),
+                                                                          child:
+                                                                              Text(
+                                                                            e.toString(),
+                                                                            style:
+                                                                                const TextStyle(
+                                                                              fontSize: 14,
+                                                                              fontWeight: FontWeight.bold,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        LinearPercentIndicator(
+                                                                          width:
+                                                                              160,
+                                                                          percent:
+                                                                              (1 / comments.length) * starCounts[e],
+                                                                          backgroundColor: Colors
+                                                                              .grey
+                                                                              .withOpacity(.5),
+                                                                          progressColor:
+                                                                              kPriColor,
+                                                                        ),
+                                                                        SizedBox(
+                                                                          width:
+                                                                              10,
+                                                                          child:
+                                                                              Text(
+                                                                            "${starCounts[e]}",
+                                                                            style:
+                                                                                const TextStyle(
+                                                                              fontSize: 12,
+                                                                            ),
+                                                                            textAlign:
+                                                                                TextAlign.right,
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                )
+                                                                .toList(),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                            icon: LineIcons.comments,
+                                          )
+                                        : const SizedBox(),
+                                  ],
+                                ),
+                              ),
+
+                              //
+                              //
+                              //
+                              SizedBox(height: 1000)
+                            ],
                           ),
                         ),
                       ],
-                    )
-                  : SkeletonLoader(
-                      builder: Container(),
                     ),
-            ),
-          ],
-        ),
+                  ),
+                )
+              : const SizedBox(),
+          details.isNotEmpty
+              ? Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      boxShadow: kBoxShadow,
+                      color: kSecColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(50),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: price != 0
+                          ? MainAxisAlignment.spaceAround
+                          : MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        price != 0
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "${formatter.format(price)} ₺",
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  old_price != 0
+                                      ? Row(
+                                          children: [
+                                            Text(
+                                              "${formatter.format(old_price)} ₺",
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFFD2D2D2),
+                                                fontWeight: FontWeight.w400,
+                                                decoration:
+                                                    TextDecoration.lineThrough,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              "${formatter.format(old_price - price)}₺ \nİndirim",
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: kPriColor,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : const SizedBox(),
+                                ],
+                              )
+                            : const SizedBox(),
+                        AddCart(
+                          pid: details["id"],
+                          status: price != 0 ? true : false,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : const SizedBox(),
+        ],
       ),
     );
   }
 }
 
-class ProductPicture extends StatelessWidget {
-  const ProductPicture({
-    Key? key,
-    required this.image,
-  }) : super(key: key);
-
-  final String image;
+class SingleExpansion extends StatelessWidget {
+  final String title;
+  final Widget text;
+  final IconData? icon;
+  const SingleExpansion(
+      {Key? key, required this.title, required this.text, this.icon})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SimpleShadow(
-      opacity: 0.15,
-      color: kSecColor,
-      offset: const Offset(0, 2),
-      child: Padding(
-        padding: const EdgeInsets.all(7.0),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: 5.0,
-              sigmaY: 5.0,
-            ),
-            child: Image.network(
-              image,
-              width: double.infinity,
-              fit: BoxFit.contain,
-            ),
+    return ExpansionTile(
+      collapsedTextColor: Colors.black,
+      collapsedIconColor: Colors.black,
+      textColor: kPriColor,
+      iconColor: kPriColor,
+      leading: icon != null
+          ? Icon(
+              icon,
+            )
+          : const SizedBox(),
+      title: Text(title),
+      expandedAlignment: Alignment.centerLeft,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            bottom: 25,
+            top: 5,
+            left: kSectionHorizontal - 5,
+            right: kSectionHorizontal,
           ),
-          borderRadius: kBorderRadius,
+          child: text,
         ),
-      ),
+      ],
     );
   }
 }

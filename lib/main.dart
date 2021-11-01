@@ -53,15 +53,15 @@ class _MyAppState extends State<MyApp> {
           brightness: Brightness.light,
           primaryColor: kPriColor,
           secondaryHeaderColor: kSecColor,
-          canvasColor: const Color(0xFFD9D9D9),
+          canvasColor: const Color(0xfff5f5f5),
         ),
-        darkTheme: ThemeData(
-          brightness: Brightness.dark,
-          primaryColor: kPriColor,
-          secondaryHeaderColor: kSecColor,
-          canvasColor: const Color(0xFF474747),
-        ),
-        themeMode: ThemeMode.light,
+        // darkTheme: ThemeData(
+        //   brightness: Brightness.dark,
+        //   primaryColor: kPriColor,
+        //   secondaryHeaderColor: kSecColor,
+        //   canvasColor: const Color(0xFF474747),
+        // ),
+        themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
         routes: {
           '/': (context) => const Home(),

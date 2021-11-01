@@ -25,10 +25,6 @@ class SectionTitle extends StatelessWidget {
               fontSize: 18,
             ),
           ),
-          Image.asset(
-            "images/kartal.png",
-            height: 50,
-          ),
         ],
       ),
     );

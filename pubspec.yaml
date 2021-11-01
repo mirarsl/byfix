@@ -22,6 +22,10 @@ dependencies:
   loader_overlay: ^2.0.2+1
   skeleton_loader: ^2.0.0+4
   simple_shadow: ^0.2.0
+  sliding_up_panel: ^2.0.0+1
+  interactiveviewer_gallery: ^0.6.0
+  flutter_widget_from_html_core: ^0.8.1
+  percent_indicator: ^3.4.0
 
 dev_dependencies:
   flutter_test:

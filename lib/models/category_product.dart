@@ -1,4 +1,7 @@
+import 'package:byfix/controllers/functions.dart';
+import 'package:byfix/views/product_details.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'consts.dart';
 
@@ -21,7 +24,11 @@ class CategoryProduct extends StatelessWidget {
     return MaterialButton(
       padding: EdgeInsets.zero,
       onPressed: () {
-        print(id);
+        Navigator.of(context).push(
+          Provider.of<Functions>(context, listen: false).customRoute(
+            ProductDetails(id: id),
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
