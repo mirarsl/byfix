@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 const kApiImg = "https://byfixstore.com/images";
 const kPriColor = Color(0xFFC06437);
 const kSecColor = Color(0xFF32353A);
-const double kSectionHorizontal = 25.0;
+const double kSectionHorizontal = 15.0;
 const double kSectionVertical = 15.0;
 const kSection = EdgeInsets.symmetric(
   vertical: kSectionVertical,

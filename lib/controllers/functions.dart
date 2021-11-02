@@ -94,8 +94,17 @@ class Functions with ChangeNotifier, DiagnosticableTreeMixin {
   Future<dynamic> getProductDetails(id) async {
     var data = await Network(
       url: "products/$id",
-      parameters: "include=pictures|comments&variant=true&offset=0&limit=100",
+      parameters:
+          "include=pictures|comments&variant=true&offset=0&limit=100&match=true",
     ).getData();
+    return data;
+  }
+
+  Future<dynamic> commentPoint(id, cid, type) async {
+    var data = await Network(
+      url: "products/$id/comments/$cid",
+      parameters: "type=$type",
+    ).postData();
     return data;
   }
 }

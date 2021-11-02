@@ -1,7 +1,7 @@
-import 'package:byfix/models/variant_option.dart';
+import 'package:byfix/models/product_details_page/variant_option.dart';
 import 'package:flutter/material.dart';
 
-import 'consts.dart';
+import '../consts.dart';
 
 class SingleVariant extends StatelessWidget {
   final String name;
@@ -18,12 +18,11 @@ class SingleVariant extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var answerName = variants.asMap().values.where((element) {
-      return element["id"] == answer;
-    });
-    // if (answerName.isNotEmpty) {
-    //   print(answerName.toList()[0]["ozellik"]);
-    // }
+    String answerName = "";
+    if (answer != null) {
+      answerName = variants[answer!]["ozellik"];
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(
         vertical: 10,
@@ -46,7 +45,7 @@ class SingleVariant extends StatelessWidget {
               const SizedBox(width: 3),
               answer != null
                   ? Text(
-                      answerName.toList()[0]["ozellik"],
+                      answerName,
                       style: const TextStyle(
                         color: kSecColor,
                         fontWeight: FontWeight.w500,
@@ -67,11 +66,12 @@ class SingleVariant extends StatelessWidget {
               children: variants.asMap().entries.map((e) {
                 return VariantOption(
                   name: e.value["ozellik"],
+                  addPrice: e.value['fiyat'],
                   last: e.key + 1 == variants.length,
-                  option: answer == e.value["id"],
+                  option: answer == e.key,
                   length: variants.length,
                   onPress: () {
-                    onPress(e.value["id"]);
+                    onPress(e.key);
                   },
                 );
               }).toList(),

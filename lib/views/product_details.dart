@@ -5,8 +5,11 @@ import 'package:byfix/controllers/functions.dart';
 import 'package:byfix/models/add_cart.dart';
 import 'package:byfix/models/app_bar.dart';
 import 'package:byfix/models/consts.dart';
-import 'package:byfix/models/product_picture.dart';
-import 'package:byfix/models/single_variant.dart';
+import 'package:byfix/models/product_details_page/product_picture.dart';
+import 'package:byfix/models/product_details_page/single_comment.dart';
+import 'package:byfix/models/product_details_page/single_expansion.dart';
+import 'package:byfix/models/product_details_page/single_variant.dart';
+import 'package:byfix/models/product_details_page/star_percent.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -15,7 +18,6 @@ import 'package:interactiveviewer_gallery/hero_dialog_route.dart';
 import 'package:interactiveviewer_gallery/interactiveviewer_gallery.dart';
 import 'package:intl/intl.dart';
 import 'package:line_icons/line_icons.dart';
-import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:skeleton_loader/skeleton_loader.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -73,6 +75,7 @@ class _ProductDetailsState extends State<ProductDetails> {
   List variants = [];
   bool hasVariant = true;
   Map? variantAnswers = {};
+  double variantAddPrice = 0.0;
 
   List comments = [];
   bool noComment = false;
@@ -105,7 +108,7 @@ class _ProductDetailsState extends State<ProductDetails> {
       if (comments.isEmpty) {
         noComment = true;
       } else {
-        comments.forEach((element) {
+        for (var element in comments) {
           starPoint = starPoint + double.parse(element["yildiz"]);
           if (int.parse(element["yildiz"]) == 5) {
             starCounts[5]++;
@@ -118,7 +121,7 @@ class _ProductDetailsState extends State<ProductDetails> {
           } else if (int.parse(element["yildiz"]) >= 1) {
             starCounts[1]++;
           }
-        });
+        }
 
         starPoint = starPoint / comments.length;
         if (starPoint == 5) {
@@ -143,9 +146,7 @@ class _ProductDetailsState extends State<ProductDetails> {
         hasVariant = false;
       }
       setState(() {});
-    } catch (e) {
-      print(json);
-    }
+    } finally {}
   }
 
   String sozlesme = "";
@@ -201,13 +202,13 @@ class _ProductDetailsState extends State<ProductDetails> {
     var formatter =
         NumberFormat.currency(locale: 'tr', symbol: '', decimalDigits: 2);
     double price = 0.0;
-    double old_price = 0.0;
+    double oldPrice = 0.0;
     if (details.isNotEmpty) {
       if (details["fiyat"] != null) {
-        price = double.parse(details["fiyat"]);
+        price = double.parse(details["fiyat"]) + variantAddPrice;
       }
       if (details["eski_fiyat"] != "") {
-        old_price = double.parse(details["eski_fiyat"]);
+        oldPrice = double.parse(details["eski_fiyat"]);
       }
     }
 
@@ -243,7 +244,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                         margin: const EdgeInsets.symmetric(
                           vertical: kSectionVertical,
                         ),
-                        height: 480,
+                        height: MediaQuery.of(context).size.height - 450,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -291,8 +292,10 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                       .width,
                                                   loadingBuilder: (context,
                                                       child, loadingProgress) {
-                                                    if (loadingProgress == null)
+                                                    if (loadingProgress ==
+                                                        null) {
                                                       return child;
+                                                    }
                                                     return const Center(
                                                       child:
                                                           CircularProgressIndicator(
@@ -362,6 +365,8 @@ class _ProductDetailsState extends State<ProductDetails> {
                             onPress: (int id) {
                               setState(() {
                                 variantAnswers![e["id"]] = id;
+                                variantAddPrice =
+                                    double.parse(e["options"][id]["fiyat"]);
                               });
                             },
                           );
@@ -457,28 +462,26 @@ class _ProductDetailsState extends State<ProductDetails> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Container(
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            details["baslik"],
-                                            textAlign: TextAlign.start,
-                                            style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          details["baslik"],
+                                          textAlign: TextAlign.start,
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                          const SizedBox(width: 5),
-                                          Text(
-                                            "#" + details["urun_kod"],
-                                            textAlign: TextAlign.start,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          "#" + details["urun_kod"],
+                                          textAlign: TextAlign.start,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                     comments.isNotEmpty
                                         ? Column(
@@ -496,7 +499,8 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                   ),
                                                   const SizedBox(width: 3),
                                                   Text(
-                                                    starPoint.toString(),
+                                                    starPoint
+                                                        .toStringAsFixed(1),
                                                     style: const TextStyle(
                                                       color: kPriColor,
                                                       fontWeight:
@@ -585,7 +589,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                         ],
                                       ),
                                     )
-                                  : SizedBox(),
+                                  : const SizedBox(),
                               Container(
                                 margin: EdgeInsets.only(
                                   top: kargoKalan != null ? 10 : 0,
@@ -603,16 +607,16 @@ class _ProductDetailsState extends State<ProductDetails> {
                                   children: [
                                     details['spot'] != ""
                                         ? SingleExpansion(
-                                            title: "Ürün Özellikleri",
+                                            title: "Açıklama",
                                             text: HtmlWidget(details["spot"]),
-                                            icon: LineIcons.table,
+                                            icon: LineIcons.info,
                                           )
                                         : const SizedBox(),
                                     details["icerik"] != ""
                                         ? SingleExpansion(
-                                            title: "Ürün Açıklamaları",
+                                            title: "Özellikler",
                                             text: HtmlWidget(details["icerik"]),
-                                            icon: LineIcons.info,
+                                            icon: LineIcons.table,
                                           )
                                         : const SizedBox(),
                                     sozlesme != ""
@@ -637,11 +641,16 @@ class _ProductDetailsState extends State<ProductDetails> {
                                             text: Column(
                                               children: [
                                                 Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
                                                     Column(
                                                       children: [
                                                         Text(
-                                                          starPoint.toString(),
+                                                          starPoint
+                                                              .toStringAsFixed(
+                                                                  1),
                                                           style:
                                                               const TextStyle(
                                                             fontSize: 36,
@@ -684,11 +693,12 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                       ],
                                                     ),
                                                     Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                        vertical:
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                        top: kSectionVertical,
+                                                        bottom:
                                                             kSectionVertical,
-                                                        horizontal:
+                                                        left:
                                                             kSectionHorizontal,
                                                       ),
                                                       child: Column(
@@ -702,68 +712,79 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                             [5, 4, 3, 2, 1]
                                                                 .map(
                                                                   (e) =>
-                                                                      Container(
-                                                                    margin: const EdgeInsets
-                                                                        .symmetric(
-                                                                      vertical:
-                                                                          2,
-                                                                    ),
-                                                                    child: Row(
-                                                                      children: [
-                                                                        const Icon(
-                                                                          LineIcons
-                                                                              .starAlt,
-                                                                          color:
-                                                                              kPriColor,
-                                                                          size:
-                                                                              16,
-                                                                        ),
-                                                                        Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.symmetric(horizontal: 2.0),
-                                                                          child:
-                                                                              Text(
-                                                                            e.toString(),
-                                                                            style:
-                                                                                const TextStyle(
-                                                                              fontSize: 14,
-                                                                              fontWeight: FontWeight.bold,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        LinearPercentIndicator(
-                                                                          width:
-                                                                              160,
-                                                                          percent:
-                                                                              (1 / comments.length) * starCounts[e],
-                                                                          backgroundColor: Colors
-                                                                              .grey
-                                                                              .withOpacity(.5),
-                                                                          progressColor:
-                                                                              kPriColor,
-                                                                        ),
-                                                                        SizedBox(
-                                                                          width:
-                                                                              10,
-                                                                          child:
-                                                                              Text(
-                                                                            "${starCounts[e]}",
-                                                                            style:
-                                                                                const TextStyle(
-                                                                              fontSize: 12,
-                                                                            ),
-                                                                            textAlign:
-                                                                                TextAlign.right,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
+                                                                      StarPercent(
+                                                                    index: e,
+                                                                    count:
+                                                                        starCounts[
+                                                                            e],
+                                                                    length: comments
+                                                                        .length,
                                                                   ),
                                                                 )
                                                                 .toList(),
                                                       ),
                                                     ),
                                                   ],
+                                                ),
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    vertical: kSectionVertical,
+                                                  ),
+                                                  margin: const EdgeInsets
+                                                      .symmetric(
+                                                    vertical: kSectionVertical,
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.start,
+                                                    children: [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          const Expanded(
+                                                            child: Text(
+                                                              "En Faydalı Değerlendirme",
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .left,
+                                                              style: TextStyle(
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          MaterialButton(
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            onPressed: () {
+                                                              //TODO Ürün Yorumları Sayfasına Gidecek
+                                                            },
+                                                            child: Text(
+                                                              "Tümü (${comments.length})",
+                                                              style:
+                                                                  const TextStyle(
+                                                                color:
+                                                                    kPriColor,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SingleComment(
+                                                        comments: comments[0],
+                                                        productId:
+                                                            details["id"],
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -777,7 +798,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                               //
                               //
                               //
-                              SizedBox(height: 1000)
+                              const SizedBox(height: 1000)
                             ],
                           ),
                         ),
@@ -817,11 +838,11 @@ class _ProductDetailsState extends State<ProductDetails> {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  old_price != 0
+                                  oldPrice != 0
                                       ? Row(
                                           children: [
                                             Text(
-                                              "${formatter.format(old_price)} ₺",
+                                              "${formatter.format(oldPrice)} ₺",
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 color: Color(0xFFD2D2D2),
@@ -832,7 +853,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                             ),
                                             const SizedBox(width: 3),
                                             Text(
-                                              "${formatter.format(old_price - price)}₺ \nİndirim",
+                                              "${formatter.format(oldPrice - price)}₺ \nİndirim",
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 color: kPriColor,
@@ -856,43 +877,6 @@ class _ProductDetailsState extends State<ProductDetails> {
               : const SizedBox(),
         ],
       ),
-    );
-  }
-}
-
-class SingleExpansion extends StatelessWidget {
-  final String title;
-  final Widget text;
-  final IconData? icon;
-  const SingleExpansion(
-      {Key? key, required this.title, required this.text, this.icon})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ExpansionTile(
-      collapsedTextColor: Colors.black,
-      collapsedIconColor: Colors.black,
-      textColor: kPriColor,
-      iconColor: kPriColor,
-      leading: icon != null
-          ? Icon(
-              icon,
-            )
-          : const SizedBox(),
-      title: Text(title),
-      expandedAlignment: Alignment.centerLeft,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(
-            bottom: 25,
-            top: 5,
-            left: kSectionHorizontal - 5,
-            right: kSectionHorizontal,
-          ),
-          child: text,
-        ),
-      ],
     );
   }
 }

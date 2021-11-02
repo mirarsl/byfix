@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:skeleton_loader/skeleton_loader.dart';
 
-import 'add_cart.dart';
 import 'consts.dart';
 
 class LastProducts extends StatelessWidget {
@@ -106,11 +105,9 @@ class LastProducts extends StatelessWidget {
             Container(
               height: 80,
               width: double.infinity,
-              padding: EdgeInsets.only(right: 25, left: price != 0 ? 50 : 25),
+              padding: const EdgeInsets.symmetric(horizontal: 25),
               child: Row(
-                mainAxisAlignment: price != 0
-                    ? MainAxisAlignment.spaceBetween
-                    : MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -131,33 +128,16 @@ class LastProducts extends StatelessWidget {
                               ],
                             )
                           : const SizedBox(),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            price != 0 ? formatter.format(price) + "₺" : "",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 26,
-                            ),
-                            textAlign: TextAlign.start,
-                          ),
-                          const SizedBox(width: 2),
-                          price != 0
-                              ? const Text(
-                                  "₺",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                )
-                              : const SizedBox(),
-                        ],
+                      Text(
+                        price != 0 ? formatter.format(price) + "₺" : "",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                        ),
+                        textAlign: TextAlign.start,
                       ),
                     ],
                   ),
-                  AddCart(pid: id, status: price != 0 ? true : false),
                 ],
               ),
             ),

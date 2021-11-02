@@ -26,6 +26,7 @@ dependencies:
   interactiveviewer_gallery: ^0.6.0
   flutter_widget_from_html_core: ^0.8.1
   percent_indicator: ^3.4.0
+  shared_preferences: ^2.0.8
 
 dev_dependencies:
   flutter_test:

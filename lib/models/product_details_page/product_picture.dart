@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:simple_shadow/simple_shadow.dart';
 
-import 'consts.dart';
+import '../consts.dart';
 
 class ProductPicture extends StatelessWidget {
   const ProductPicture({

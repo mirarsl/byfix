@@ -13,4 +13,11 @@ class Network {
     var response = await http.get(uri, headers: {});
     return response.body;
   }
+
+  Future<dynamic> postData() async {
+    var uri = Uri.parse(
+        'https://api.byfixstore.com/$url?api_token=$_token&$parameters');
+    var response = await http.post(uri, headers: {});
+    return response.body;
+  }
 }

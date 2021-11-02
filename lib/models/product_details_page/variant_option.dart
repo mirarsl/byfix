@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'consts.dart';
+import '../consts.dart';
 
 class VariantOption extends StatelessWidget {
   final bool option;
@@ -8,6 +8,7 @@ class VariantOption extends StatelessWidget {
   final String name;
   final int length;
   final Function onPress;
+  final int addPrice;
   const VariantOption({
     Key? key,
     this.option = false,
@@ -15,8 +16,8 @@ class VariantOption extends StatelessWidget {
     required this.length,
     required this.name,
     required this.onPress,
+    this.addPrice = 0,
   }) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialButton(
@@ -37,13 +38,25 @@ class VariantOption extends StatelessWidget {
         margin: EdgeInsets.only(right: last ? 0 : 10),
         width: MediaQuery.of(context).size.width / 4,
         child: Center(
-          child: Text(
-            name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              color: kSecColor,
+          child: RichText(
+            text: TextSpan(
+              text: name,
+              style: const TextStyle(
+                fontSize: 14,
+                color: kSecColor,
+              ),
+              children: [
+                TextSpan(
+                  text: addPrice != 0 ? "\n+$addPrice" : "",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: kPriColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
+            textAlign: TextAlign.center,
           ),
         ),
       ),
