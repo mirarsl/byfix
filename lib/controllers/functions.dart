@@ -53,8 +53,8 @@ class Functions with ChangeNotifier, DiagnosticableTreeMixin {
   List<BasketItem> basketItems = <BasketItem>[];
   Map<String, dynamic> basket = {};
 
-  bool addBasketItem(
-      {var json, double? price, Map? variants, double? additional}) {
+  Future<bool> addBasketItem(
+      {var json, double? price, Map? variants, double? additional}) async {
     String sepetKey;
     Map variantAnswers = {};
     if (price == null && variants == null) {
@@ -82,7 +82,6 @@ class Functions with ChangeNotifier, DiagnosticableTreeMixin {
             .toString();
       }
     }
-    //IYZICO SEPET
     String urunKod = json["urun_kod"];
     int id = json["id"];
     double? basketPrice;
@@ -116,14 +115,11 @@ class Functions with ChangeNotifier, DiagnosticableTreeMixin {
 
     if (basket[sepetKey] != null) {
       if (price == null) {
-        // özel ücret değilse arttırılsın
-        basket[sepetKey]["quantity"] = basket[sepetKey]["quantity"] + 1;
-        //Adet arttırıldı
+        // basket[sepetKey]["quantity"] = basket[sepetKey]["quantity"] + 1;
       } else {
         return false;
       }
     } else {
-      //Sepet oluşturuldu
       basket[sepetKey] = {
         'id': id,
         'name': name,
@@ -134,17 +130,6 @@ class Functions with ChangeNotifier, DiagnosticableTreeMixin {
         'additional': additional,
       };
     }
-    // basket = {};
-    print(basket);
-    // basketItems.add(
-    //   BasketItem(
-    //     id: urunKod,
-    //     price: basketPrice.toString(),
-    //     name: name,
-    //     category1: category,
-    //     itemType: BasketItemType.PHYSICAL,
-    //   ),
-    // );
     notifyListeners();
     return true;
   }

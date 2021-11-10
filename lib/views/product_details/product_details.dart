@@ -969,7 +969,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                                 .width -
                                                             50,
                                                     child: MatchedProduct(
-                                                      onPress: () {
+                                                      onPress: () async {
                                                         ///////Ana Ürün Eklenir
                                                         bool cartStatus = false;
                                                         bool variantStatus =
@@ -994,12 +994,13 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                         }
 
                                                         if (variantStatus) {
-                                                          cartStatus = Provider
-                                                                  .of<Functions>(
+                                                          cartStatus =
+                                                              await Provider.of<
+                                                                          Functions>(
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                              .addBasketItem(
+                                                                  .addBasketItem(
                                                             json: details,
                                                             variants: variantAnswers!
                                                                     .isNotEmpty

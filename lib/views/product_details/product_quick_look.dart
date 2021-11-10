@@ -908,9 +908,10 @@ class _ProductQuickLookState extends State<ProductQuickLook> {
                             }
 
                             if (variantStatus) {
-                              bool returnStatus =
-                                  Provider.of<Functions>(context, listen: false)
-                                      .addBasketItem(
+                              bool returnStatus = await Provider.of<Functions>(
+                                      context,
+                                      listen: false)
+                                  .addBasketItem(
                                 json: details,
                                 variants: variantAnswers!.isNotEmpty
                                     ? variantAnswers
