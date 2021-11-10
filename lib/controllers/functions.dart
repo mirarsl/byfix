@@ -1,11 +1,166 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:iyzico/iyzico.dart';
 
 import 'network.dart';
 
 class Functions with ChangeNotifier, DiagnosticableTreeMixin {
+  static const iyziConfig = IyziConfig(
+    '90NH0oqaJ3G6IisETnmiH5EPzszC9Ibx',
+    'Yhn7zJ4SWJ55VccuXk3EBjGaGNlWDGFw',
+    'https://sandbox-api.iyzipay.com',
+  );
+
+  final iyzico = Iyzico.fromConfig(configuration: iyziConfig);
+
+  // final paymentCard = PaymentCard(
+  //   cardHolderName: 'John Doe',
+  //   cardNumber: '5528790000000008',
+  //   expireYear: '2030',
+  //   expireMonth: '12',
+  //   cvc: '123',
+  // );
+  //
+  // final shippingAddress = Address(
+  //   address: 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1',
+  //   contactName: 'Jane Doe',
+  //   zipCode: '34742',
+  //   city: 'Istanbul',
+  //   country: 'Turkey',
+  // );
+  // final billingAddress = Address(
+  //   address: 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1',
+  //   contactName: 'Jane Doe',
+  //   city: 'Istanbul',
+  //   country: 'Turkey',
+  // );
+  //
+  // final buyer = Buyer(
+  //   id: 'BY789',
+  //   name: 'John',
+  //   surname: 'Doe',
+  //   identityNumber: '74300864791',
+  //   email: 'email@email.com',
+  //   registrationAddress: 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1',
+  //   city: 'Istanbul',
+  //   country: 'Turkey',
+  //   ip: '85.34.78.112',
+  // );
+
+  List<BasketItem> basketItems = <BasketItem>[];
+  Map<String, dynamic> basket = {};
+
+  bool addBasketItem(
+      {var json, double? price, Map? variants, double? additional}) {
+    String sepetKey;
+    Map variantAnswers = {};
+    if (price == null && variants == null) {
+      //Yalın ürün kodu
+      sepetKey = md5.convert(utf8.encode(json["urun_kod"])).toString();
+    } else {
+      if (price != null) {
+        //indirimi olan ürünün kodu varyant farketmez tek kullanımlıktır
+        sepetKey = md5
+            .convert(utf8.encode(json["urun_kod"] + '/' + price.toString()))
+            .toString();
+      } else {
+        //indirimli olmayan ürün
+        String variantString = "";
+
+        for (var variant in variants!.entries) {
+          variantString +=
+              variant.key.toString() + '-' + variant.value.toString() + '/';
+          variantAnswers[variant.key] = variant.value;
+        } //Birden fazla varyant kontrol edilir.
+        sepetKey = md5
+            .convert(
+              utf8.encode(json["urun_kod"] + '/' + variantString),
+            )
+            .toString();
+      }
+    }
+    //IYZICO SEPET
+    String urunKod = json["urun_kod"];
+    int id = json["id"];
+    double? basketPrice;
+    double fiyat = double.parse(json["fiyat"]);
+    double? kdvOran = double.parse(json["kdv_oran"]);
+    double? kdvUcret;
+    String name = json["baslik"];
+    String category = categories[int.parse(json["kat_id"])]["title"];
+
+    if (price != null) {
+      if (additional != null) {
+        price += additional;
+      }
+      if (json["kdv"] == "1") {
+        kdvUcret = (price / 100) * kdvOran;
+      }
+      basketPrice = price;
+    } else {
+      if (additional != null) {
+        fiyat += additional;
+      }
+      if (json["kdv"] == "1") {
+        kdvUcret = (fiyat / 100) * kdvOran;
+      }
+      basketPrice = fiyat;
+    }
+    if (json["kargo"] == "1") {
+      double kargoUcret = double.parse(json["kargo_ucret"]);
+      basketPrice += kargoUcret;
+    }
+
+    if (basket[sepetKey] != null) {
+      if (price == null) {
+        // özel ücret değilse arttırılsın
+        basket[sepetKey]["quantity"] = basket[sepetKey]["quantity"] + 1;
+        //Adet arttırıldı
+      } else {
+        return false;
+      }
+    } else {
+      //Sepet oluşturuldu
+      basket[sepetKey] = {
+        'id': id,
+        'name': name,
+        'quantity': 1,
+        'price': basketPrice,
+        'kdv': kdvUcret,
+        'variants': variantAnswers,
+        'additional': additional,
+      };
+    }
+    // basket = {};
+    print(basket);
+    // basketItems.add(
+    //   BasketItem(
+    //     id: urunKod,
+    //     price: basketPrice.toString(),
+    //     name: name,
+    //     category1: category,
+    //     itemType: BasketItemType.PHYSICAL,
+    //   ),
+    // );
+    notifyListeners();
+    return true;
+  }
+
+  void createPayment() async {
+    // final paymentResult = await iyzico.CreatePaymentRequest(
+    //   price: 1.0,
+    //   paidPrice: 1.1,
+    //   paymentCard: paymentCard,
+    //   buyer: buyer,
+    //   shippingAddress: shippingAddress,
+    //   billingAddress: billingAddress,
+    //   basketItems: basketItems,
+    // );
+  }
+
   Route customRoute(Widget page) {
     return PageRouteBuilder(
       settings: const RouteSettings(name: 'FadeAnimation'),
@@ -100,11 +255,27 @@ class Functions with ChangeNotifier, DiagnosticableTreeMixin {
     return data;
   }
 
+  Future<dynamic> getProductCategoryItems(id) async {
+    var data = await Network(
+      url: "categories/$id/products",
+      parameters: "&limit=10&offset=0",
+    ).getData();
+    return data;
+  }
+
   Future<dynamic> commentPoint(id, cid, type) async {
     var data = await Network(
       url: "products/$id/comments/$cid",
       parameters: "type=$type",
     ).postData();
+    return data;
+  }
+
+  Future<dynamic> productComments(id, offset, limit) async {
+    var data = await Network(
+      url: "products/$id/comments/",
+      parameters: "offset=$offset&limit=$limit",
+    ).getData();
     return data;
   }
 }

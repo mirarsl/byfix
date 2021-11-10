@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:byfix/controllers/functions.dart';
 import 'package:byfix/models/consts.dart';
-import 'package:byfix/models/discount_products.dart';
-import 'package:byfix/models/last_products.dart';
-import 'package:byfix/models/section_title.dart';
-import 'package:byfix/models/single_campaign.dart';
-import 'package:byfix/models/single_category.dart';
-import 'package:byfix/models/vertical_campaign.dart';
+import 'package:byfix/models/home_shop/discount_products.dart';
+import 'package:byfix/models/home_shop/last_products.dart';
+import 'package:byfix/models/home_shop/section_title.dart';
+import 'package:byfix/models/home_shop/single_campaign.dart';
+import 'package:byfix/models/home_shop/single_category.dart';
+import 'package:byfix/models/home_shop/vertical_campaign.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -63,9 +63,7 @@ class _ShopPageState extends State<ShopPage> {
           });
         }
       }
-    } catch (e) {
-      print(e);
-    }
+    } finally {}
     setState(() {});
   }
 
@@ -90,9 +88,7 @@ class _ShopPageState extends State<ShopPage> {
           });
         }
       }
-    } catch (e) {
-      print(e);
-    }
+    } finally {}
     setState(() {});
   }
 
@@ -121,9 +117,7 @@ class _ShopPageState extends State<ShopPage> {
           });
         }
       }
-    } catch (e) {
-      print(e);
-    }
+    } finally {}
     setState(() {});
   }
 
@@ -154,9 +148,7 @@ class _ShopPageState extends State<ShopPage> {
           });
         }
       }
-    } catch (e) {
-      print(e);
-    }
+    } finally {}
     setState(() {});
   }
 

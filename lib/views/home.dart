@@ -1,11 +1,14 @@
+import 'package:byfix/controllers/functions.dart';
 import 'package:byfix/models/app_bar.dart';
 import 'package:byfix/models/consts.dart';
 import 'package:byfix/models/drawer.dart';
 import 'package:byfix/models/page_button.dart';
-import 'package:byfix/views/pages/shop.dart';
+import 'package:byfix/views/home/shop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
+import 'package:line_icons/line_icons.dart';
+import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -111,7 +114,84 @@ class _HomeState extends State<Home> {
         appBar: MyAppBar(
           controller: _scrollController,
           hideAppBar: _hideAppBar,
-          actionList: const [],
+          actionList: [
+            false
+                ? Center(
+                    child: MaterialButton(
+                      highlightColor: Colors.transparent,
+                      splashColor: Colors.transparent,
+                      onPressed: () {},
+                      padding: EdgeInsets.zero,
+                      minWidth: 0,
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0x50D2D2D2),
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "BA",
+                              style: const TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox(),
+            Center(
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Stack(
+                  children: [
+                    IconButton(
+                      highlightColor: Colors.transparent,
+                      splashColor: Colors.transparent,
+                      onPressed: () {},
+                      icon: const Icon(
+                        LineIcons.shoppingCart,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Provider.of<Functions>(context).basket.isNotEmpty
+                        ? Align(
+                            child: Container(
+                              child: Center(
+                                child: Text(
+                                  Provider.of<Functions>(context)
+                                      .basket
+                                      .length
+                                      .toString(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              height: 15,
+                              width: 15,
+                              decoration: const BoxDecoration(
+                                color: kPriColor,
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(10)),
+                              ),
+                            ),
+                            alignment: Alignment.bottomRight.add(
+                              const Alignment(-.4, -.4),
+                            ),
+                          )
+                        : const SizedBox(),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 35),
+          ],
           drawer: IconButton(
             onPressed: _handleMenuButtonPressed,
             icon: ValueListenableBuilder<AdvancedDrawerValue>(

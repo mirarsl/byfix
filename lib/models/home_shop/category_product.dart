@@ -1,9 +1,9 @@
 import 'package:byfix/controllers/functions.dart';
-import 'package:byfix/views/product_details.dart';
+import 'package:byfix/views/product_details/product_details.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'consts.dart';
+import '../consts.dart';
 
 class CategoryProduct extends StatelessWidget {
   const CategoryProduct({

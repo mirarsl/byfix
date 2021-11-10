@@ -1,15 +1,20 @@
 import 'dart:convert';
 import 'dart:ui';
 
+import 'package:art_sweetalert/art_sweetalert.dart';
 import 'package:byfix/controllers/functions.dart';
-import 'package:byfix/models/add_cart.dart';
 import 'package:byfix/models/app_bar.dart';
 import 'package:byfix/models/consts.dart';
+import 'package:byfix/models/product_details_page/add_cart.dart';
+import 'package:byfix/models/product_details_page/matched_product.dart';
+import 'package:byfix/models/product_details_page/product_category_item.dart';
 import 'package:byfix/models/product_details_page/product_picture.dart';
 import 'package:byfix/models/product_details_page/single_comment.dart';
 import 'package:byfix/models/product_details_page/single_expansion.dart';
 import 'package:byfix/models/product_details_page/single_variant.dart';
 import 'package:byfix/models/product_details_page/star_percent.dart';
+import 'package:byfix/views/product_details/product_comments.dart';
+import 'package:byfix/views/product_details/product_quick_look.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -75,13 +80,15 @@ class _ProductDetailsState extends State<ProductDetails> {
   List variants = [];
   bool hasVariant = true;
   Map? variantAnswers = {};
-  double variantAddPrice = 0.0;
+  Map<int, double> variantAddPrice = {};
 
   List comments = [];
   bool noComment = false;
   double starPoint = 0;
   List stars = [];
   Map starCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+
+  List matchedProducts = [];
 
   String? kargoKalan;
 
@@ -141,9 +148,14 @@ class _ProductDetailsState extends State<ProductDetails> {
         variants = details["variants"];
         for (int i = 0; i < variants.length; i++) {
           variantAnswers![variants[i]["id"]] = null;
+          variantAddPrice[variants[i]["id"]] = 0;
         }
       } else {
         hasVariant = false;
+      }
+
+      if (details['matched_products'] != null) {
+        matchedProducts = details["matched_products"];
       }
       setState(() {});
     } finally {}
@@ -159,8 +171,21 @@ class _ProductDetailsState extends State<ProductDetails> {
     } finally {}
   }
 
+  List categoryItems = [];
+  Future<void> getProductCategoryItems() async {
+    try {
+      var data = await Provider.of<Functions>(context, listen: false)
+          .getProductCategoryItems(details['kat_id']);
+      var json = jsonDecode(data);
+      for (var category in json["data"]) {
+        categoryItems.add(category);
+      }
+    } finally {}
+  }
+
   Future<void> asyncPage() async {
     await getDetails();
+    getProductCategoryItems();
     getDocument();
     final nowDate = DateTime.now();
     final lastDate =
@@ -201,11 +226,19 @@ class _ProductDetailsState extends State<ProductDetails> {
   Widget build(BuildContext context) {
     var formatter =
         NumberFormat.currency(locale: 'tr', symbol: '', decimalDigits: 2);
+    var formatterNo =
+        NumberFormat.currency(locale: 'tr', symbol: '', decimalDigits: 0);
     double price = 0.0;
     double oldPrice = 0.0;
     if (details.isNotEmpty) {
       if (details["fiyat"] != null) {
-        price = double.parse(details["fiyat"]) + variantAddPrice;
+        double addPrice = 0;
+        if (variantAddPrice.isNotEmpty) {
+          variantAddPrice.forEach((key, value) {
+            addPrice += value;
+          });
+        }
+        price = double.parse(details["fiyat"]) + addPrice;
       }
       if (details["eski_fiyat"] != "") {
         oldPrice = double.parse(details["eski_fiyat"]);
@@ -217,6 +250,84 @@ class _ProductDetailsState extends State<ProductDetails> {
       appBar: MyAppBar(
         controller: _scrollController,
         hideAppBar: _hideAppBar,
+        actionList: [
+          false
+              ? Center(
+                  child: MaterialButton(
+                    highlightColor: Colors.transparent,
+                    splashColor: Colors.transparent,
+                    onPressed: () {},
+                    padding: EdgeInsets.zero,
+                    minWidth: 0,
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Color(0x50D2D2D2),
+                          borderRadius: BorderRadius.all(Radius.circular(20)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "BA",
+                            style: const TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox(),
+          Center(
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: Stack(
+                children: [
+                  IconButton(
+                    highlightColor: Colors.transparent,
+                    splashColor: Colors.transparent,
+                    onPressed: () {},
+                    icon: const Icon(
+                      LineIcons.shoppingCart,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Provider.of<Functions>(context).basket.isNotEmpty
+                      ? Align(
+                          child: Container(
+                            child: Center(
+                              child: Text(
+                                Provider.of<Functions>(context)
+                                    .basket
+                                    .length
+                                    .toString(),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            height: 15,
+                            width: 15,
+                            decoration: const BoxDecoration(
+                              color: kPriColor,
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(10)),
+                            ),
+                          ),
+                          alignment: Alignment.bottomRight.add(
+                            const Alignment(-.4, -.4),
+                          ),
+                        )
+                      : const SizedBox(),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 35),
+        ],
       ),
       body: Stack(
         children: [
@@ -365,8 +476,9 @@ class _ProductDetailsState extends State<ProductDetails> {
                             onPress: (int id) {
                               setState(() {
                                 variantAnswers![e["id"]] = id;
-                                variantAddPrice =
-                                    double.parse(e["options"][id]["fiyat"]);
+                                variantAddPrice[e["id"]] = double.parse(
+                                  e["options"][id]["fiyat"].toString(),
+                                );
                               });
                             },
                           );
@@ -688,6 +800,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                               const TextStyle(
                                                             fontWeight:
                                                                 FontWeight.bold,
+                                                            fontSize: 12,
                                                           ),
                                                         ),
                                                       ],
@@ -762,7 +875,28 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                             padding:
                                                                 EdgeInsets.zero,
                                                             onPressed: () {
-                                                              //TODO Ürün Yorumları Sayfasına Gidecek
+                                                              Navigator.of(
+                                                                      context)
+                                                                  .push(
+                                                                Provider.of<Functions>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .customRoute(
+                                                                  ProductComments(
+                                                                    comments:
+                                                                        comments,
+                                                                    starPoint:
+                                                                        starPoint,
+                                                                    details:
+                                                                        details,
+                                                                    starCounts:
+                                                                        starCounts,
+                                                                    stars:
+                                                                        stars,
+                                                                  ),
+                                                                ),
+                                                              );
                                                             },
                                                             child: Text(
                                                               "Tümü (${comments.length})",
@@ -782,6 +916,9 @@ class _ProductDetailsState extends State<ProductDetails> {
                                                         comments: comments[0],
                                                         productId:
                                                             details["id"],
+                                                        func: () {
+                                                          setState(() {});
+                                                        },
                                                       ),
                                                     ],
                                                   ),
@@ -794,11 +931,257 @@ class _ProductDetailsState extends State<ProductDetails> {
                                   ],
                                 ),
                               ),
+                              matchedProducts.isNotEmpty
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: kSectionVertical,
+                                        horizontal: kSectionHorizontal,
+                                      ),
+                                      color: Colors.white,
+                                      width: double.infinity,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(
+                                            width: double.infinity,
+                                            child: Text(
+                                              "BİRLİKTE AL, KAZAN",
+                                              textAlign: TextAlign.left,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 360,
+                                            child: ListView(
+                                              scrollDirection: Axis.horizontal,
+                                              physics:
+                                                  const PageScrollPhysics(),
+                                              children: matchedProducts.map(
+                                                (e) {
+                                                  return SizedBox(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width -
+                                                            50,
+                                                    child: MatchedProduct(
+                                                      onPress: () {
+                                                        ///////Ana Ürün Eklenir
+                                                        bool cartStatus = false;
+                                                        bool variantStatus =
+                                                            true;
+                                                        for (var variant
+                                                            in variantAnswers!
+                                                                .entries) {
+                                                          if (variant.value ==
+                                                              null) {
+                                                            variantStatus =
+                                                                false;
+                                                          }
+                                                        }
+                                                        double addPrice = 0;
+                                                        if (variantAddPrice
+                                                            .isNotEmpty) {
+                                                          variantAddPrice
+                                                              .forEach(
+                                                                  (key, value) {
+                                                            addPrice += value;
+                                                          });
+                                                        }
 
-                              //
-                              //
-                              //
-                              const SizedBox(height: 1000)
+                                                        if (variantStatus) {
+                                                          cartStatus = Provider
+                                                                  .of<Functions>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                              .addBasketItem(
+                                                            json: details,
+                                                            variants: variantAnswers!
+                                                                    .isNotEmpty
+                                                                ? variantAnswers
+                                                                : null,
+                                                            price: price,
+                                                            additional:
+                                                                addPrice,
+                                                          );
+                                                        } else {
+                                                          ArtSweetAlert.show(
+                                                            context: context,
+                                                            artDialogArgs:
+                                                                ArtDialogArgs(
+                                                              sizeSuccessIcon:
+                                                                  75,
+                                                              type:
+                                                                  ArtSweetAlertType
+                                                                      .danger,
+                                                              title:
+                                                                  "Seçim Yapılmadı",
+                                                              barrierColor: Colors
+                                                                  .black
+                                                                  .withOpacity(
+                                                                      .7),
+                                                              text:
+                                                                  "Lütfen ürün özellikleri arasında seçiminizi yapınız.",
+                                                              confirmButtonText:
+                                                                  "Tamam",
+                                                              confirmButtonColor:
+                                                                  kPriColor,
+                                                              dialogElevation:
+                                                                  30,
+                                                            ),
+                                                          );
+                                                        }
+                                                        if (cartStatus) {
+                                                          showModalBottomSheet(
+                                                            context: context,
+                                                            builder: (context) =>
+                                                                FractionallySizedBox(
+                                                              heightFactor: .75,
+                                                              child:
+                                                                  ProductQuickLook(
+                                                                id: e["product"]
+                                                                    [0]["id"],
+                                                                discount: e[
+                                                                    "discount"],
+                                                              ),
+                                                            ),
+                                                            shape:
+                                                                const RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .vertical(
+                                                                top: Radius
+                                                                    .circular(
+                                                                  50,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            isScrollControlled:
+                                                                true,
+                                                          );
+                                                        } else {
+                                                          ArtSweetAlert.show(
+                                                            context: context,
+                                                            artDialogArgs:
+                                                                ArtDialogArgs(
+                                                              sizeSuccessIcon:
+                                                                  75,
+                                                              type:
+                                                                  ArtSweetAlertType
+                                                                      .warning,
+                                                              title:
+                                                                  "Ürün eklenemedi",
+                                                              barrierColor: Colors
+                                                                  .black
+                                                                  .withOpacity(
+                                                                      .7),
+                                                              text:
+                                                                  "Sepetinizde bu ürün bulunmaktadır.",
+                                                              confirmButtonText:
+                                                                  "Tamam",
+                                                              confirmButtonColor:
+                                                                  kPriColor,
+                                                              dialogElevation:
+                                                                  30,
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                      oldPrice: double.parse(
+                                                        e["product"][0]
+                                                            ["fiyat"],
+                                                      ),
+                                                      price: (double.parse(
+                                                            e["product"][0]
+                                                                ["fiyat"],
+                                                          ) -
+                                                          e["discount"]),
+                                                      title: e["product"][0]
+                                                          ["baslik"],
+                                                      category: Provider.of<
+                                                                  Functions>(
+                                                              context)
+                                                          .categories[int.parse(
+                                                                  e["product"]
+                                                                          [0]
+                                                                      [
+                                                                      "kat_id"])]
+                                                              ["title"]
+                                                          .toString(),
+                                                      image: e["product"][0]
+                                                          ["gorsel"],
+                                                      id: e["product"][0]["id"],
+                                                      discount: double.parse(
+                                                        e["discount"]
+                                                            .toString(),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ).toList(),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    )
+                                  : const SizedBox(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: kSectionVertical,
+                                  horizontal: kSectionHorizontal,
+                                ),
+                                color: Colors.white,
+                                width: double.infinity,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(
+                                      width: double.infinity,
+                                      child: Text(
+                                        "DİĞER ÜRÜNLER",
+                                        textAlign: TextAlign.left,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Column(
+                                      children: categoryItems.map(
+                                        (e) {
+                                          if (e["id"] != widget.id) {
+                                            return ProductCategoryItems(
+                                              oldPrice:
+                                                  e["eski_fiyat"] != null &&
+                                                          e["eski_fiyat"] != ""
+                                                      ? double.parse(
+                                                          e["eski_fiyat"])
+                                                      : 0,
+                                              price: double.parse(e["fiyat"]),
+                                              image: e["gorsel"],
+                                              title: e["baslik"],
+                                              category: Provider.of<Functions>(
+                                                      context)
+                                                  .categories[
+                                                      int.parse(e["kat_id"])]
+                                                      ["title"]
+                                                  .toString(),
+                                              id: e["id"],
+                                            );
+                                          }
+                                          return const SizedBox();
+                                        },
+                                      ).toList(),
+                                    )
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 100)
                             ],
                           ),
                         ),
@@ -830,19 +1213,33 @@ class _ProductDetailsState extends State<ProductDetails> {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    "${formatter.format(price)} ₺",
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  Column(
+                                    children: [
+                                      Text(
+                                        "${price % 1 == 0 ? formatterNo.format(price) : formatter.format(price)}₺",
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      details["kdv"] == "1"
+                                          ? Text(
+                                              " +%${details["kdv_oran"]} KDV",
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: kPriColor,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            )
+                                          : const SizedBox(),
+                                    ],
                                   ),
                                   oldPrice != 0
                                       ? Row(
                                           children: [
                                             Text(
-                                              "${formatter.format(oldPrice)} ₺",
+                                              "${oldPrice % 1 == 0 ? formatterNo.format(oldPrice) : formatter.format(oldPrice)} ₺",
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 color: Color(0xFFD2D2D2),
@@ -853,7 +1250,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                             ),
                                             const SizedBox(width: 3),
                                             Text(
-                                              "${formatter.format(oldPrice - price)}₺ \nİndirim",
+                                              "${(oldPrice - price) % 1 == 0 ? formatterNo.format(oldPrice - price) + "₺ " : formatter.format(oldPrice - price) + "₺ \n"}İndirim",
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 color: kPriColor,
@@ -869,6 +1266,60 @@ class _ProductDetailsState extends State<ProductDetails> {
                         AddCart(
                           pid: details["id"],
                           status: price != 0 ? true : false,
+                          onPress: () {
+                            bool variantStatus = true;
+                            for (var variant in variantAnswers!.entries) {
+                              if (variant.value == null) {
+                                variantStatus = false;
+                              }
+                            }
+                            double addPrice = 0;
+                            if (variantAddPrice.isNotEmpty) {
+                              variantAddPrice.forEach((key, value) {
+                                addPrice += value;
+                              });
+                            }
+
+                            if (variantStatus) {
+                              Provider.of<Functions>(context, listen: false)
+                                  .addBasketItem(
+                                json: details,
+                                variants: variantAnswers!.isNotEmpty
+                                    ? variantAnswers
+                                    : null,
+                                additional: addPrice,
+                              );
+                              ArtSweetAlert.show(
+                                context: context,
+                                artDialogArgs: ArtDialogArgs(
+                                  sizeSuccessIcon: 75,
+                                  type: ArtSweetAlertType.success,
+                                  title: "Sepete Eklendi",
+                                  barrierColor: Colors.black.withOpacity(.7),
+                                  text:
+                                      "Seçtiğiniz ürün başarılı bir şekilde sepetinize eklendi.",
+                                  confirmButtonText: "Tamam",
+                                  confirmButtonColor: kPriColor,
+                                  dialogElevation: 30,
+                                ),
+                              );
+                            } else {
+                              ArtSweetAlert.show(
+                                context: context,
+                                artDialogArgs: ArtDialogArgs(
+                                  sizeSuccessIcon: 75,
+                                  type: ArtSweetAlertType.danger,
+                                  title: "Seçim Yapılmadı",
+                                  barrierColor: Colors.black.withOpacity(.7),
+                                  text:
+                                      "Lütfen ürün özellikleri arasında seçiminizi yapınız.",
+                                  confirmButtonText: "Tamam",
+                                  confirmButtonColor: kPriColor,
+                                  dialogElevation: 30,
+                                ),
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),

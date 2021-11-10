@@ -1,17 +1,22 @@
+import 'package:byfix/controllers/functions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:line_icons/line_icons.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeleton_loader/skeleton_loader.dart';
 
 import '../consts.dart';
 
 class SingleComment extends StatelessWidget {
   final Map comments;
   final int productId;
+  final Function func;
 
   const SingleComment({
     required this.comments,
     required this.productId,
+    required this.func,
     Key? key,
   }) : super(key: key);
 
@@ -96,11 +101,32 @@ class SingleComment extends StatelessWidget {
           ],
         ),
         Container(
-          child: Text(
-            comments["yorum"],
-            style: const TextStyle(
-              fontSize: 14,
-            ),
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: Text(
+                  comments["baslik"],
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: Text(
+                  comments["yorum"],
+                  style: const TextStyle(
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.justify,
+                ),
+              ),
+            ],
           ),
           decoration: BoxDecoration(
             color: const Color(
@@ -113,8 +139,8 @@ class SingleComment extends StatelessWidget {
             bottom: 10,
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: 30,
-            vertical: 20,
+            horizontal: 15,
+            vertical: 15,
           ),
         ),
         Row(
@@ -124,12 +150,14 @@ class SingleComment extends StatelessWidget {
               type: 0,
               productId: productId,
               commentId: comments["id"],
+              func: func,
             ),
             CommentPointButton(
               count: comments["useless"],
               type: 1,
               commentId: comments["id"],
               productId: productId,
+              func: func,
             ),
           ],
         ),
@@ -145,64 +173,134 @@ class CommentPointButton extends StatelessWidget {
     required this.type,
     required this.productId,
     required this.commentId,
+    required this.func,
   }) : super(key: key);
 
   final int count;
   final int type;
   final int productId;
   final int commentId;
+  final Function func;
 
   @override
   Widget build(BuildContext context) {
-    Future<bool> _getPref() async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      bool value = prefs.getBool('comment-$commentId') ?? false;
-      return value;
+    Future<Widget> async() async {
+      SharedPreferences pref = await SharedPreferences.getInstance();
+      bool status = pref.getBool('comment-$commentId') ?? false;
+      return MaterialButton(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 5,
+        ),
+        minWidth: 0,
+        onPressed: !status
+            ? () async {
+                Provider.of<Functions>(context, listen: false)
+                    .commentPoint(productId, commentId, type);
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('comment-$commentId', true);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Geri bildiriminiz için teşekkürler',
+                      textAlign: TextAlign.center,
+                    ),
+                    backgroundColor: kSecColor,
+                    duration: Duration(milliseconds: 1000),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 30,
+                      horizontal: kSectionHorizontal,
+                    ),
+                  ),
+                );
+                func();
+
+                //TODO verilen oylar hesaba taşınacak //Eğer giriş yapılmadıysa kapatılacak
+              }
+            : null,
+        child: Row(
+          children: [
+            Icon(
+              type == 0 ? LineIcons.thumbsUp : LineIcons.thumbsDown,
+              color: const Color(0xFF9E9E9E),
+            ),
+            const SizedBox(
+              width: 5,
+            ),
+            Text(
+              "${type == 0 ? 'Yararlı' : 'Yararsız'} ($count)",
+              style: const TextStyle(
+                color: Color(0xFF9E9E9E),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
-    return MaterialButton(
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 5,
-      ),
-      minWidth: 0,
-      onPressed: () async {
-        // Provider.of<Functions>(context, listen: false).commentPoint(productId, commentId, type);
-
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('comment-$commentId', true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Geri bildiriminiz için teşekkürler',
-              textAlign: TextAlign.center,
-            ),
-            backgroundColor: kSecColor,
-            duration: Duration(milliseconds: 1000),
-            padding: EdgeInsets.symmetric(
-              vertical: 30,
-              horizontal: kSectionHorizontal,
-            ),
-          ),
-        );
-        //TODO verilen oylar hesaba taşınacak //Eğer giriş yapılmadıysa kapatılacak
+    return FutureBuilder<Widget>(
+      future: async(),
+      builder: (context, AsyncSnapshot<Widget> snapshot) {
+        if (snapshot.hasData) {
+          return snapshot.data!;
+        } else {
+          return const CircularProgressIndicator();
+        }
       },
-      child: Row(
-        children: [
-          Icon(
-            type == 0 ? LineIcons.thumbsUp : LineIcons.thumbsDown,
-            color: const Color(0xFF9E9E9E),
-          ),
-          const SizedBox(
-            width: 5,
-          ),
-          Text(
-            "${type == 0 ? 'Yararlı' : 'Yararısz'} ($count)",
-            style: const TextStyle(
-              color: Color(0xFF9E9E9E),
-            ),
-          ),
-        ],
+    );
+  }
+}
+
+class SingleCommentSkeleton extends StatelessWidget {
+  const SingleCommentSkeleton({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonLoader(
+      builder: Column(
+        children: Iterable.generate(20)
+            .map((e) => Container(
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 20,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(25),
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        children: [
+                          Container(
+                            height: 10,
+                            width: MediaQuery.of(context).size.width - 90,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            height: 10,
+                            width: MediaQuery.of(context).size.width - 90,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            height: 10,
+                            width: MediaQuery.of(context).size.width - 90,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ))
+            .toList(),
       ),
     );
   }

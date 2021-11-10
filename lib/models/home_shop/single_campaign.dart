@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skeleton_loader/skeleton_loader.dart';
 
-import 'consts.dart';
+import '../consts.dart';
 
 class SingleCampaign extends StatelessWidget {
   final String image;

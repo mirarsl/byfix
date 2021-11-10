@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:line_icons/line_icons.dart';
 
-import 'consts.dart';
+import '../consts.dart';
 
 class AddCart extends StatelessWidget {
   final int pid;
   final bool status;
+  final Function onPress;
+  final String text;
   const AddCart({
     required this.pid,
     this.status = true,
+    required this.onPress,
+    this.text = "Sepete Ekle",
     Key? key,
   }) : super(key: key);
 
@@ -16,17 +20,15 @@ class AddCart extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: () {
-        if (status) {
-          print("$pid Sepete Ekle");
-        } else {
-          print("Ürün için alarm");
-        }
+        onPress();
       },
       style: kButtonStyle,
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(status ? LineIcons.addToShoppingCart : LineIcons.bell),
-          Text(status ? "Sepete Ekle" : "Stokta Yok"),
+          const SizedBox(width: 3),
+          Text(status ? text : "Stokta Yok"),
         ],
       ),
     );
