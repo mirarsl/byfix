@@ -1,5 +1,6 @@
 import 'package:byfix/models/consts.dart';
 import 'package:byfix/views/home.dart';
+import 'package:byfix/views/login.dart';
 import 'package:byfix/views/rgb.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -50,7 +51,7 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       child: MaterialApp(
-        initialRoute: '/',
+        initialRoute: '/login',
         theme: ThemeData(
           brightness: Brightness.light,
           primaryColor: kPriColor,
@@ -66,6 +67,7 @@ class _MyAppState extends State<MyApp> {
         themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
         routes: {
+          '/login': (context) => const Login(),
           '/': (context) => const Home(),
           '/rgb': (context) => const RGB(),
         },

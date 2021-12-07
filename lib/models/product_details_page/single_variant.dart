@@ -19,8 +19,10 @@ class SingleVariant extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String answerName = "";
+
     if (answer != null) {
-      answerName = variants[answer!]["ozellik"];
+      var newL = variants.where((element) => element['id'] == answer);
+      answerName = newL.toList()[0]['ozellik'];
     }
 
     return Container(
@@ -59,19 +61,27 @@ class SingleVariant extends StatelessWidget {
             margin: const EdgeInsets.symmetric(
               vertical: kSectionVertical,
             ),
-            height: 40,
+            height: 100,
             child: ListView(
               physics: const ClampingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               children: variants.asMap().entries.map((e) {
                 return VariantOption(
                   name: e.value["ozellik"],
+                  image: e.value["gorsel"],
                   addPrice: e.value['fiyat'],
                   last: e.key + 1 == variants.length,
-                  option: answer == e.key,
+                  option: answer == e.value["id"],
                   length: variants.length,
                   onPress: () {
-                    onPress(e.key);
+                    List pictures = [];
+                    if (e.value['gorsel'] != "") {
+                      pictures.add(
+                        {'gorsel': e.value['gorsel']},
+                      );
+                    }
+                    pictures.addAll(e.value['pictures']);
+                    onPress(e.key, e.value["id"], pictures);
                   },
                 );
               }).toList(),

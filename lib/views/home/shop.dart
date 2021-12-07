@@ -8,6 +8,7 @@ import 'package:byfix/models/home_shop/section_title.dart';
 import 'package:byfix/models/home_shop/single_campaign.dart';
 import 'package:byfix/models/home_shop/single_category.dart';
 import 'package:byfix/models/home_shop/vertical_campaign.dart';
+import 'package:byfix/views/search.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -227,7 +228,11 @@ class _ShopPageState extends State<ShopPage> {
                 overlayColor: MaterialStateProperty.all(Colors.transparent),
               ),
               onPressed: () {
-                //TODO Arama sayfası yapılacak
+                Navigator.of(context).push(
+                  Provider.of<Functions>(context, listen: false).customRoute(
+                    const Search(),
+                  ),
+                );
               },
               child: Row(
                 children: [

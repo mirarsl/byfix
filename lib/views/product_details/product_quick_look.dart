@@ -26,9 +26,11 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 class ProductQuickLook extends StatefulWidget {
   final int id;
   final int discount;
+  final String? sepetKey;
   const ProductQuickLook({
     Key? key,
     required this.id,
+    this.sepetKey,
     this.discount = 0,
   }) : super(key: key);
 
@@ -49,6 +51,7 @@ class _ProductQuickLookState extends State<ProductQuickLook> {
   bool noPictures = false;
   List allPicList = [];
 
+  List variantPictures = [];
   List variants = [];
   bool hasVariant = true;
   Map? variantAnswers = {};
@@ -224,7 +227,8 @@ class _ProductQuickLookState extends State<ProductQuickLook> {
             child: ListView(
               physics: const ClampingScrollPhysics(),
               children: [
-                pictures.isNotEmpty || noPictures
+                (pictures.isNotEmpty || noPictures) ||
+                        variantPictures.isNotEmpty
                     ? Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -247,76 +251,155 @@ class _ProductQuickLookState extends State<ProductQuickLook> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.only(bottom: 35),
-                              child: CarouselSlider(
-                                carouselController: _carouselController,
-                                options: CarouselOptions(
-                                  onPageChanged: (index, reason) {
-                                    setState(() {
-                                      _current = index;
-                                    });
-                                  },
-                                  scrollPhysics: const ClampingScrollPhysics(),
-                                  viewportFraction: 1,
-                                  height: 400,
-                                  initialPage: 0,
-                                  enableInfiniteScroll: false,
-                                  aspectRatio: 16 / 9,
-                                ),
-                                items: allPicList
-                                    .map(
-                                      (e) => ProductPicture(
-                                        image: e,
-                                        onPress: () {
-                                          Navigator.of(context).push(
-                                            HeroDialogRoute(
-                                              builder: (BuildContext context) =>
-                                                  InteractiveviewerGallery(
-                                                sources: allPicList,
-                                                maxScale: 5,
-                                                onPageChanged: (dir) {
-                                                  _carouselController
-                                                      .jumpToPage(dir);
-                                                },
-                                                initIndex:
-                                                    allPicList.indexOf(e),
-                                                itemBuilder:
-                                                    (context, index, status) =>
-                                                        Image.network(
-                                                  allPicList[index],
-                                                  fit: BoxFit.contain,
-                                                  height: MediaQuery.of(context)
-                                                      .size
-                                                      .width,
-                                                  loadingBuilder: (context,
-                                                      child, loadingProgress) {
-                                                    if (loadingProgress ==
-                                                        null) {
-                                                      return child;
-                                                    }
-                                                    return const Center(
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        valueColor:
-                                                            AlwaysStoppedAnimation(
-                                                                kPriColor),
-                                                        strokeWidth: 2,
-                                                        backgroundColor:
-                                                            kSecColor,
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                          );
+                            variantPictures.isNotEmpty
+                                ? Container(
+                                    padding: const EdgeInsets.only(bottom: 35),
+                                    child: CarouselSlider(
+                                      carouselController: _carouselController,
+                                      options: CarouselOptions(
+                                        onPageChanged: (index, reason) {
+                                          setState(() {
+                                            _current = index;
+                                          });
                                         },
+                                        scrollPhysics:
+                                            const ClampingScrollPhysics(),
+                                        viewportFraction: 1,
+                                        height: 400,
+                                        initialPage: 0,
+                                        enableInfiniteScroll: false,
+                                        aspectRatio: 16 / 9,
                                       ),
-                                    )
-                                    .toList(),
-                              ),
-                            ),
+                                      items: variantPictures
+                                          .map(
+                                            (e) => ProductPicture(
+                                              image: e,
+                                              onPress: () {
+                                                Navigator.of(context).push(
+                                                  HeroDialogRoute(
+                                                    builder: (BuildContext
+                                                            context) =>
+                                                        InteractiveviewerGallery(
+                                                      sources: variantPictures,
+                                                      maxScale: 5,
+                                                      onPageChanged: (dir) {
+                                                        _carouselController
+                                                            .jumpToPage(dir);
+                                                      },
+                                                      initIndex: variantPictures
+                                                          .indexOf(e),
+                                                      itemBuilder: (context,
+                                                              index, status) =>
+                                                          Image.network(
+                                                        variantPictures[index],
+                                                        fit: BoxFit.contain,
+                                                        height: MediaQuery.of(
+                                                                context)
+                                                            .size
+                                                            .width,
+                                                        loadingBuilder: (context,
+                                                            child,
+                                                            loadingProgress) {
+                                                          if (loadingProgress ==
+                                                              null) {
+                                                            return child;
+                                                          }
+                                                          return const Center(
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                              valueColor:
+                                                                  AlwaysStoppedAnimation(
+                                                                      kPriColor),
+                                                              strokeWidth: 2,
+                                                              backgroundColor:
+                                                                  kSecColor,
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                  )
+                                : Container(
+                                    padding: const EdgeInsets.only(bottom: 35),
+                                    child: CarouselSlider(
+                                      carouselController: _carouselController,
+                                      options: CarouselOptions(
+                                        onPageChanged: (index, reason) {
+                                          setState(() {
+                                            _current = index;
+                                          });
+                                        },
+                                        scrollPhysics:
+                                            const ClampingScrollPhysics(),
+                                        viewportFraction: 1,
+                                        height: 400,
+                                        initialPage: 0,
+                                        enableInfiniteScroll: false,
+                                        aspectRatio: 16 / 9,
+                                      ),
+                                      items: allPicList
+                                          .map(
+                                            (e) => ProductPicture(
+                                              image: e,
+                                              onPress: () {
+                                                Navigator.of(context).push(
+                                                  HeroDialogRoute(
+                                                    builder: (BuildContext
+                                                            context) =>
+                                                        InteractiveviewerGallery(
+                                                      sources: allPicList,
+                                                      maxScale: 5,
+                                                      onPageChanged: (dir) {
+                                                        _carouselController
+                                                            .jumpToPage(dir);
+                                                      },
+                                                      initIndex:
+                                                          allPicList.indexOf(e),
+                                                      itemBuilder: (context,
+                                                              index, status) =>
+                                                          Image.network(
+                                                        allPicList[index],
+                                                        fit: BoxFit.contain,
+                                                        height: MediaQuery.of(
+                                                                context)
+                                                            .size
+                                                            .width,
+                                                        loadingBuilder: (context,
+                                                            child,
+                                                            loadingProgress) {
+                                                          if (loadingProgress ==
+                                                              null) {
+                                                            return child;
+                                                          }
+                                                          return const Center(
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                              valueColor:
+                                                                  AlwaysStoppedAnimation(
+                                                                      kPriColor),
+                                                              strokeWidth: 2,
+                                                              backgroundColor:
+                                                                  kSecColor,
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                  ),
                             Positioned(
                               bottom: 15,
                               child: SizedBox(
@@ -330,9 +413,13 @@ class _ProductQuickLookState extends State<ProductQuickLook> {
                                       kPriColor,
                                     ),
                                     backgroundColor: kSecColor,
-                                    value: noPictures
-                                        ? 1
-                                        : (1 / (pictures.length) * _current),
+                                    value: variantPictures.isEmpty
+                                        ? noPictures
+                                            ? 1
+                                            : (1 / (pictures.length) * _current)
+                                        : (1 /
+                                            (variantPictures.length - 1) *
+                                            _current),
                                   ),
                                 ),
                               ),
@@ -361,9 +448,20 @@ class _ProductQuickLookState extends State<ProductQuickLook> {
                             answer: variantAnswers != null
                                 ? variantAnswers![e["id"]]
                                 : null,
-                            onPress: (int id) {
+                            onPress: (int id, int? vid, List? pictures) {
                               setState(() {
-                                variantAnswers![e["id"]] = id;
+                                if (pictures != null) {
+                                  variantPictures.clear();
+                                  for (var pic in pictures) {
+                                    variantPictures.add(
+                                        "$kApiImg/product/${pic["gorsel"]}");
+                                  }
+                                  // variantPictures.addAll(allPicList);
+                                } else {
+                                  variantPictures.clear();
+                                }
+
+                                variantAnswers![e["id"]] = vid;
                                 variantAddPrice[e["id"]] = double.parse(
                                   e["options"][id]["fiyat"].toString(),
                                 );
@@ -906,20 +1004,20 @@ class _ProductQuickLookState extends State<ProductQuickLook> {
                                 addPrice += value;
                               });
                             }
-
                             if (variantStatus) {
-                              bool returnStatus = await Provider.of<Functions>(
-                                      context,
-                                      listen: false)
-                                  .addBasketItem(
+                              dynamic returnStatus =
+                                  await Provider.of<Functions>(context,
+                                          listen: false)
+                                      .addBasketItem(
                                 json: details,
                                 variants: variantAnswers!.isNotEmpty
                                     ? variantAnswers
                                     : null,
+                                matched: widget.sepetKey,
                                 price: price,
                                 additional: addPrice,
                               );
-                              if (returnStatus) {
+                              if (returnStatus != false) {
                                 await ArtSweetAlert.show(
                                   context: context,
                                   artDialogArgs: ArtDialogArgs(

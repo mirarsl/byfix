@@ -51,7 +51,12 @@ class ProductPicture extends StatelessWidget {
               ),
             ),
           ),
-          borderRadius: kBorderRadius,
+          borderRadius: BorderRadius.only(
+            bottomLeft: const Radius.circular(120),
+            topRight: kBorderRadius.topRight,
+            topLeft: kBorderRadius.topLeft,
+            bottomRight: kBorderRadius.bottomRight,
+          ),
         ),
       ),
     );
